@@ -1,10 +1,9 @@
 // Spotify search screen.
-// Type a query → hit search → see results from the user's Spotify.
-// Tapping a result currently just logs it; in the next step it'll
-// pre-fill the "create pin" form.
+// Debounced auto-search as the user types. Tap a result to open the
+// "create pin" modal pre-filled with that track.
 
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -30,19 +29,38 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  const doSearch = async () => {
-    try {
-      setErrorText(null);
-      setLoading(true);
-      const tracks = await searchTracks(query);
-      setResults(tracks);
-    } catch (err: any) {
-      setErrorText(err?.message ?? 'Search failed');
+  // Debounced auto-search: wait 300ms after the user stops typing.
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
       setResults([]);
-    } finally {
+      setErrorText(null);
       setLoading(false);
+      return;
     }
-  };
+    let cancelled = false;
+    setLoading(true);
+    const timeout = setTimeout(async () => {
+      try {
+        const tracks = await searchTracks(trimmed);
+        if (cancelled) return;
+        setErrorText(null);
+        setResults(tracks);
+      } catch (err: any) {
+        if (cancelled) return;
+        setErrorText(err?.message ?? 'Search failed');
+        setResults([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [query]);
+
+  const hasQuery = query.trim().length > 0;
 
   return (
     <View style={styles.container}>
@@ -53,79 +71,98 @@ export default function SearchScreen() {
           placeholderTextColor="#999"
           value={query}
           onChangeText={setQuery}
-          onSubmitEditing={doSearch}
           returnKeyType="search"
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Pressable
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={doSearch}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Search</Text>
-          )}
-        </Pressable>
+        {hasQuery && (
+          <Pressable
+            style={styles.clearBtn}
+            onPress={() => setQuery('')}
+            hitSlop={8}
+          >
+            <Text style={styles.clearBtnText}>×</Text>
+          </Pressable>
+        )}
+        {loading && (
+          <View style={styles.spinnerInline}>
+            <ActivityIndicator />
+          </View>
+        )}
       </View>
 
       {errorText && <Text style={styles.error}>{errorText}</Text>}
 
-      <FlatList
-        data={results}
-        keyExtractor={(t) => t.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.row}
-            onPress={() => {
-              router.push({
-                pathname: '/create-pin',
-                params: {
-                  trackId: item.id,
-                  trackName: item.name,
-                  artistName: item.artists.map((a) => a.name).join(', '),
-                  durationMs: item.duration_ms.toString(),
-                  albumImageUrl: item.album.images[0]?.url ?? '',
-                  previewUrl: item.preview_url ?? '',
-                },
-              });
-            }}
-          >
-            {item.album.images[0] ? (
-              <Image
-                source={{ uri: item.album.images[0].url }}
-                style={styles.albumArt}
-              />
-            ) : (
-              <View style={[styles.albumArt, styles.albumArtFallback]} />
-            )}
-            <View style={styles.rowText}>
-              <Text style={styles.trackName} numberOfLines={1}>
-                {item.name}
+      {!hasQuery ? (
+        <View style={styles.hintWrap}>
+          <Text style={styles.hintTitle}>Pin a song to a place</Text>
+          <Text style={styles.hintBody}>
+            Search for any track on Spotify, tap it, set a location and a
+            ≥20-second clip. It'll play when someone walks past.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={results}
+          keyExtractor={(t) => t.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.row}
+              onPress={() => {
+                router.push({
+                  pathname: '/create-pin',
+                  params: {
+                    trackId: item.id,
+                    trackName: item.name,
+                    artistName: item.artists.map((a) => a.name).join(', '),
+                    durationMs: item.duration_ms.toString(),
+                    albumImageUrl: item.album.images[0]?.url ?? '',
+                    previewUrl: item.preview_url ?? '',
+                  },
+                });
+              }}
+            >
+              {item.album.images[0] ? (
+                <Image
+                  source={{ uri: item.album.images[0].url }}
+                  style={styles.albumArt}
+                />
+              ) : (
+                <View style={[styles.albumArt, styles.albumArtFallback]} />
+              )}
+              <View style={styles.rowText}>
+                <Text style={styles.trackName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.artist} numberOfLines={1}>
+                  {item.artists.map((a) => a.name).join(', ')}
+                </Text>
+              </View>
+              <Text style={styles.duration}>
+                {formatDuration(item.duration_ms)}
               </Text>
-              <Text style={styles.artist} numberOfLines={1}>
-                {item.artists.map((a) => a.name).join(', ')}
-              </Text>
-            </View>
-            <Text style={styles.duration}>{formatDuration(item.duration_ms)}</Text>
-          </Pressable>
-        )}
-        ListEmptyComponent={
-          !loading && query.length > 0 && !errorText ? (
-            <Text style={styles.empty}>No results.</Text>
-          ) : null
-        }
-      />
+            </Pressable>
+          )}
+          ListEmptyComponent={
+            !loading && !errorText ? (
+              <Text style={styles.empty}>No results.</Text>
+            ) : null
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  searchRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
   input: {
     flex: 1,
     borderWidth: 1,
@@ -137,17 +174,38 @@ const styles = StyleSheet.create({
     color: '#000',
     backgroundColor: '#f7f7f7',
   },
-  button: {
-    backgroundColor: '#1DB954',
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    borderRadius: 24,
-    minWidth: 80,
+  clearBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.1)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: 'white', fontWeight: '600' },
+  clearBtnText: { fontSize: 18, lineHeight: 20, color: '#444' },
+  spinnerInline: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   error: { color: '#c00', marginBottom: 12 },
+
+  hintWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 8,
+  },
+  hintTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  hintBody: {
+    fontSize: 14,
+    opacity: 0.6,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
   list: { paddingBottom: 32 },
   row: {
     flexDirection: 'row',

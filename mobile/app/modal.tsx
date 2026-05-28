@@ -1,35 +1,97 @@
-import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
+// "How it works" modal — opened by the (i) button on the Map tab.
+// Quick orientation for first-time users.
 
-import EditScreenInfo from '@/components/EditScreenInfo';
+import { StatusBar } from 'expo-status-bar';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
+
 import { Text, View } from '@/components/Themed';
 
-export default function ModalScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/modal.tsx" />
+type Step = { n: string; title: string; body: string };
 
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
+const STEPS: Step[] = [
+  {
+    n: '1',
+    title: 'Pin a song to a place',
+    body: 'Search tab → tap a track → set the location, clip start, and how long the clip should play.',
+  },
+  {
+    n: '2',
+    title: 'Group them into playlists',
+    body: 'Open a pin → Add to playlist. Playlists are ordered and can be public for friends to follow.',
+  },
+  {
+    n: '3',
+    title: 'Walk through them',
+    body: 'Map tab → Start walking. Once you\'re within ~50m of a pin, the clip plays. Stop walking turns it off.',
+  },
+  {
+    n: '4',
+    title: 'Or walk just one playlist',
+    body: 'Open the playlist → Walk this playlist. Same idea but limited to that playlist\'s pins.',
+  },
+];
+
+export default function HowItWorksScreen() {
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>kazetune</Text>
+      <Text style={styles.tagline}>Songs tied to places.</Text>
+
+      {STEPS.map((s) => (
+        <View key={s.n} style={styles.step}>
+          <View style={styles.stepNumber}>
+            <Text style={styles.stepNumberText}>{s.n}</Text>
+          </View>
+          <View style={styles.stepText}>
+            <Text style={styles.stepTitle}>{s.title}</Text>
+            <Text style={styles.stepBody}>{s.body}</Text>
+          </View>
+        </View>
+      ))}
+
+      <View style={styles.note}>
+        <Text style={styles.noteTitle}>A heads up about audio</Text>
+        <Text style={styles.noteBody}>
+          Spotify removed audio previews from a lot of tracks in 2024.
+          If a pin shows "(no preview)", the geofence still fires — there's
+          just nothing to play.
+        </Text>
+      </View>
+
       <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { padding: 24, paddingBottom: 48, gap: 8 },
+  title: { fontSize: 32, fontWeight: '800', marginBottom: 4 },
+  tagline: { fontSize: 16, opacity: 0.6, marginBottom: 16 },
+
+  step: {
+    flexDirection: 'row',
+    gap: 14,
+    marginTop: 16,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1DB954',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  stepNumberText: { color: 'white', fontWeight: '800' },
+  stepText: { flex: 1 },
+  stepTitle: { fontSize: 16, fontWeight: '700' },
+  stepBody: { fontSize: 14, opacity: 0.7, marginTop: 4, lineHeight: 20 },
+
+  note: {
+    marginTop: 32,
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 12,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
+  noteTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  noteBody: { fontSize: 13, opacity: 0.7, lineHeight: 19 },
 });
