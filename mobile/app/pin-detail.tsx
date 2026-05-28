@@ -195,6 +195,18 @@ export default function PinDetailScreen() {
         </Text>
       </Pressable>
 
+      <Pressable
+        style={styles.secondaryButton}
+        onPress={() =>
+          router.push({
+            pathname: '/add-to-playlist',
+            params: { pinId: pin.id },
+          })
+        }
+      >
+        <Text style={styles.secondaryButtonText}>+ Add to playlist</Text>
+      </Pressable>
+
       {pin.is_mine && (
         <>
           <View style={[styles.row, styles.publicRow]}>
@@ -256,6 +268,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playButtonText: { color: 'white', fontWeight: '700', fontSize: 16 },
+
+  secondaryButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.07)',
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  secondaryButtonText: { fontWeight: '600' },
 
   deleteButton: {
     marginTop: 24,
