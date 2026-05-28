@@ -72,6 +72,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="friends"
+        options={{
+          title: 'Friends',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'person.2', android: 'group', web: 'people' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
