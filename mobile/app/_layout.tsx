@@ -82,6 +82,22 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="create-pin"
+          options={{ presentation: 'modal', title: 'New pin' }}
+        />
+        <Stack.Screen
+          name="pin-detail"
+          options={{ presentation: 'modal', title: 'Pin' }}
+        />
+        <Stack.Screen
+          name="playlist-detail"
+          options={{ presentation: 'modal', title: 'Playlist' }}
+        />
+        <Stack.Screen
+          name="add-to-playlist"
+          options={{ presentation: 'modal', title: 'Add to playlist' }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

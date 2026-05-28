@@ -21,14 +21,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
+          title: 'Map',
           tabBarIcon: ({ color }) => (
             <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
+              name={{ ios: 'map.fill', android: 'map', web: 'map' }}
               tintColor={color}
               size={28}
             />
@@ -50,16 +46,38 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="search"
         options={{
-          title: 'Tab Two',
+          title: 'Search',
           tabBarIcon: ({ color }) => (
             <SymbolView
-              name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
-              }}
+              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="playlists"
+        options={{
+          title: 'Playlists',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'music.note.list', android: 'queue_music', web: 'list' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'person.crop.circle', android: 'person', web: 'person' }}
               tintColor={color}
               size={28}
             />
