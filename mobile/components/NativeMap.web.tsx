@@ -1,11 +1,10 @@
-// Web fallback for the Map tab.
-// No native map (react-native-maps doesn't run in the browser), so we
-// show a list of pins and the same Walking Mode toggle. Geofencing
-// uses navigator.geolocation under the hood — you can simulate
-// movement with Chrome DevTools > Sensors > Geolocation override.
+// Web fallback for the Map tab. Same data + walking mode as native,
+// just rendered as a list since react-native-maps doesn't run in the
+// browser. Use Chrome DevTools > Sensors > Geolocation to simulate
+// movement.
 
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,19 +13,15 @@ import {
 } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
-import { playPinClip, stopPinClip } from '@/lib/audio';
-import { startWalking, type WalkingHandle } from '@/lib/geofencing';
 import { listPins, type Pin } from '@/lib/pins';
+import { useWalkingMode } from '@/lib/useWalkingMode';
 
 export default function NativeMapWeb() {
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [walking, setWalking] = useState(false);
-  const walkingHandle = useRef<WalkingHandle | null>(null);
-  const [nowPlaying, setNowPlaying] = useState<Pin | null>(null);
-  const [walkingMsg, setWalkingMsg] = useState<string | null>(null);
+  const { walking, nowPlaying, message: walkingMsg, toggle } = useWalkingMode(pins);
 
   const load = useCallback(async () => {
     try {
@@ -41,49 +36,6 @@ export default function NativeMapWeb() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  useEffect(() => () => {
-    walkingHandle.current?.stop();
-    walkingHandle.current = null;
-    stopPinClip();
-  }, []);
-
-  const toggleWalking = async () => {
-    if (walking) {
-      walkingHandle.current?.stop();
-      walkingHandle.current = null;
-      await stopPinClip();
-      setWalking(false);
-      setNowPlaying(null);
-      setWalkingMsg(null);
-      return;
-    }
-    if (pins.length === 0) {
-      setWalkingMsg('No pins to walk to. Place one first.');
-      return;
-    }
-    try {
-      setWalkingMsg(null);
-      const handle = await startWalking({
-        pins,
-        onEnter: async (pin) => {
-          const played = await playPinClip(pin);
-          setNowPlaying(played ? pin : null);
-          setWalkingMsg(
-            played ? null : `No preview audio for "${pin.track_name}"`,
-          );
-        },
-        onExit: (pin) => {
-          setNowPlaying((cur) => (cur?.id === pin.id ? null : cur));
-        },
-        onError: (msg) => setWalkingMsg(msg),
-      });
-      walkingHandle.current = handle;
-      setWalking(true);
-    } catch (e: any) {
-      setWalkingMsg(e?.message ?? String(e));
-    }
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -93,7 +45,7 @@ export default function NativeMapWeb() {
             styles.toggleBtn,
             walking ? styles.toggleBtnOn : styles.toggleBtnOff,
           ]}
-          onPress={toggleWalking}
+          onPress={toggle}
           disabled={loading}
         >
           <Text style={styles.toggleBtnText}>

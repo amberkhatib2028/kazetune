@@ -1,10 +1,9 @@
 // Native (iOS/Android) map view.
-// Loads pins from Supabase, renders them as markers, and provides a
-// Walking Mode toggle that auto-plays clips as the user enters
-// geofences around each pin.
+// Loads every visible pin and renders markers; supports walking mode
+// over the global pin set.
 
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -14,9 +13,8 @@ import {
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-import { playPinClip, stopPinClip } from '@/lib/audio';
-import { startWalking, type WalkingHandle } from '@/lib/geofencing';
 import { listPins, type Pin } from '@/lib/pins';
+import { useWalkingMode } from '@/lib/useWalkingMode';
 
 const FALLBACK_REGION = {
   latitude: 40.34942,
@@ -30,10 +28,7 @@ export default function NativeMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [walking, setWalking] = useState(false);
-  const walkingHandle = useRef<WalkingHandle | null>(null);
-  const [nowPlaying, setNowPlaying] = useState<Pin | null>(null);
-  const [walkingMsg, setWalkingMsg] = useState<string | null>(null);
+  const { walking, nowPlaying, message: walkingMsg, toggle } = useWalkingMode(pins);
 
   const load = useCallback(async () => {
     try {
@@ -47,52 +42,6 @@ export default function NativeMap() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  // Stop walking + audio when this screen unmounts.
-  useEffect(() => () => {
-    walkingHandle.current?.stop();
-    walkingHandle.current = null;
-    stopPinClip();
-  }, []);
-
-  const toggleWalking = async () => {
-    if (walking) {
-      walkingHandle.current?.stop();
-      walkingHandle.current = null;
-      await stopPinClip();
-      setWalking(false);
-      setNowPlaying(null);
-      setWalkingMsg(null);
-      return;
-    }
-    if (pins.length === 0) {
-      setWalkingMsg('No pins to walk to. Place one first.');
-      return;
-    }
-    try {
-      setWalkingMsg(null);
-      const handle = await startWalking({
-        pins,
-        onEnter: async (pin) => {
-          const played = await playPinClip(pin);
-          setNowPlaying(played ? pin : null);
-          setWalkingMsg(
-            played
-              ? null
-              : `No preview audio for "${pin.track_name}"`,
-          );
-        },
-        onExit: (pin) => {
-          setNowPlaying((cur) => (cur?.id === pin.id ? null : cur));
-        },
-        onError: (msg) => setWalkingMsg(msg),
-      });
-      walkingHandle.current = handle;
-      setWalking(true);
-    } catch (e: any) {
-      setWalkingMsg(e?.message ?? String(e));
-    }
-  };
 
   const initialRegion =
     pins.length > 0
@@ -121,14 +70,13 @@ export default function NativeMap() {
         ))}
       </MapView>
 
-      {/* Walking-mode toggle */}
       <View style={styles.toggleWrap}>
         <Pressable
           style={[
             styles.toggleBtn,
             walking ? styles.toggleBtnOn : styles.toggleBtnOff,
           ]}
-          onPress={toggleWalking}
+          onPress={toggle}
           disabled={loading}
         >
           <Text style={styles.toggleBtnText}>
@@ -138,7 +86,6 @@ export default function NativeMap() {
         {walkingMsg && <Text style={styles.msg}>{walkingMsg}</Text>}
       </View>
 
-      {/* Now-playing banner */}
       {nowPlaying && (
         <View style={styles.nowPlaying}>
           <Text style={styles.nowPlayingTitle} numberOfLines={1}>

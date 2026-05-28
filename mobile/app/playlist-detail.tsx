@@ -21,6 +21,7 @@ import {
   type Playlist,
   type PlaylistPin,
 } from '@/lib/playlists';
+import { useWalkingMode } from '@/lib/useWalkingMode';
 
 export default function PlaylistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +30,12 @@ export default function PlaylistDetailScreen() {
   const [pins, setPins] = useState<PlaylistPin[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  // Walking mode scoped to this playlist's pins only. PlaylistPin has
+  // every field Pin has (plus `pos`), so structural typing lets us pass
+  // them straight through.
+  const { walking, nowPlaying, message: walkingMsg, toggle: toggleWalking } =
+    useWalkingMode(pins);
 
   const load = useCallback(async () => {
     try {
@@ -118,6 +125,20 @@ export default function PlaylistDetailScreen() {
         {playlist.description && (
           <Text style={styles.desc}>{playlist.description}</Text>
         )}
+        <Pressable
+          style={[
+            styles.walkBtn,
+            walking ? styles.walkBtnOn : styles.walkBtnOff,
+            pins.length === 0 && styles.disabled,
+          ]}
+          onPress={toggleWalking}
+          disabled={pins.length === 0}
+        >
+          <Text style={styles.walkBtnText}>
+            {walking ? 'Stop walking' : '▶ Walk this playlist'}
+          </Text>
+        </Pressable>
+        {walkingMsg && <Text style={styles.walkMsg}>{walkingMsg}</Text>}
       </View>
 
       <FlatList
@@ -168,6 +189,17 @@ export default function PlaylistDetailScreen() {
         >
           <Text style={styles.deleteBtnText}>Delete playlist</Text>
         </Pressable>
+      )}
+
+      {nowPlaying && (
+        <View style={styles.nowPlaying}>
+          <Text style={styles.nowPlayingTitle} numberOfLines={1}>
+            ▶ {nowPlaying.track_name}
+          </Text>
+          <Text style={styles.nowPlayingSubtitle} numberOfLines={1}>
+            {nowPlaying.artist_name} · {nowPlaying.place_name ?? 'pin'}
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -232,4 +264,32 @@ const styles = StyleSheet.create({
   },
   deleteBtnText: { color: '#c00', fontWeight: '700' },
   disabled: { opacity: 0.5 },
+
+  walkBtn: {
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    alignItems: 'center',
+  },
+  walkBtnOff: { backgroundColor: '#1DB954' },
+  walkBtnOn: { backgroundColor: '#222' },
+  walkBtnText: { color: 'white', fontWeight: '700' },
+  walkMsg: {
+    fontSize: 12,
+    opacity: 0.6,
+    marginTop: 6,
+  },
+
+  nowPlaying: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(20,20,20,0.92)',
+    padding: 12,
+    borderRadius: 12,
+  },
+  nowPlayingTitle: { color: 'white', fontWeight: '700', fontSize: 14 },
+  nowPlayingSubtitle: { color: '#bbb', fontSize: 12, marginTop: 2 },
 });
