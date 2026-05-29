@@ -11,6 +11,9 @@ export type Playlist = {
   is_mine: boolean;
   pin_count: number;
   created_at: string;
+  cover_image_url: string | null;
+  owner_display_name: string | null;
+  owner_avatar_url: string | null;
 };
 
 export type PlaylistPin = {
@@ -27,6 +30,8 @@ export type PlaylistPin = {
   is_public: boolean;
   is_mine: boolean;
   preview_url: string | null;
+  album_image_url: string | null;
+  image_url: string | null;
 };
 
 export async function listPlaylists(): Promise<Playlist[]> {
@@ -39,11 +44,13 @@ export async function createPlaylist(opts: {
   title: string;
   description?: string | null;
   isPublic?: boolean;
+  coverImageUrl?: string | null;
 }): Promise<Playlist> {
   const { data, error } = await supabase.rpc('create_playlist', {
     p_title: opts.title,
     p_description: opts.description ?? null,
     p_is_public: opts.isPublic ?? false,
+    p_cover_image_url: opts.coverImageUrl ?? null,
   });
   if (error) throw error;
   return data as Playlist;

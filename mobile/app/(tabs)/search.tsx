@@ -13,7 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Text, View, useThemeColors } from '@/components/Themed';
 import { searchTracks, type SpotifyTrack } from '@/lib/spotify';
 
 function formatDuration(ms: number) {
@@ -24,6 +24,7 @@ function formatDuration(ms: number) {
 }
 
 export default function SearchScreen() {
+  const c = useThemeColors();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SpotifyTrack[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,9 +67,16 @@ export default function SearchScreen() {
     <View style={styles.container}>
       <View style={styles.searchRow}>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: c.border,
+              backgroundColor: c.inputBackground,
+              color: c.inputText,
+            },
+          ]}
           placeholder="Search a song or artist..."
-          placeholderTextColor="#999"
+          placeholderTextColor={c.placeholder}
           value={query}
           onChangeText={setQuery}
           returnKeyType="search"
@@ -77,26 +85,28 @@ export default function SearchScreen() {
         />
         {hasQuery && (
           <Pressable
-            style={styles.clearBtn}
+            style={[styles.clearBtn, { backgroundColor: c.secondaryButton }]}
             onPress={() => setQuery('')}
             hitSlop={8}
           >
-            <Text style={styles.clearBtnText}>×</Text>
+            <Text style={[styles.clearBtnText, { color: c.text }]}>×</Text>
           </Pressable>
         )}
         {loading && (
           <View style={styles.spinnerInline}>
-            <ActivityIndicator />
+            <ActivityIndicator color={c.text} />
           </View>
         )}
       </View>
 
-      {errorText && <Text style={styles.error}>{errorText}</Text>}
+      {errorText && (
+        <Text style={[styles.error, { color: c.danger }]}>{errorText}</Text>
+      )}
 
       {!hasQuery ? (
         <View style={styles.hintWrap}>
           <Text style={styles.hintTitle}>Pin a song to a place</Text>
-          <Text style={styles.hintBody}>
+          <Text style={[styles.hintBody, { color: c.textMuted }]}>
             Search for any track on Spotify, tap it, set a location and a
             ≥20-second clip. It'll play when someone walks past.
           </Text>
@@ -129,24 +139,31 @@ export default function SearchScreen() {
                   style={styles.albumArt}
                 />
               ) : (
-                <View style={[styles.albumArt, styles.albumArtFallback]} />
+                <View
+                  style={[styles.albumArt, { backgroundColor: c.card }]}
+                />
               )}
               <View style={styles.rowText}>
                 <Text style={styles.trackName} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={styles.artist} numberOfLines={1}>
+                <Text
+                  style={[styles.artist, { color: c.textMuted }]}
+                  numberOfLines={1}
+                >
                   {item.artists.map((a) => a.name).join(', ')}
                 </Text>
               </View>
-              <Text style={styles.duration}>
+              <Text style={[styles.duration, { color: c.textSubtle }]}>
                 {formatDuration(item.duration_ms)}
               </Text>
             </Pressable>
           )}
           ListEmptyComponent={
             !loading && !errorText ? (
-              <Text style={styles.empty}>No results.</Text>
+              <Text style={[styles.empty, { color: c.textMuted }]}>
+                No results.
+              </Text>
             ) : null
           }
         />
@@ -166,30 +183,26 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#f7f7f7',
   },
   clearBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  clearBtnText: { fontSize: 18, lineHeight: 20, color: '#444' },
+  clearBtnText: { fontSize: 18, lineHeight: 20 },
   spinnerInline: {
     width: 28,
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  error: { color: '#c00', marginBottom: 12 },
+  error: { marginBottom: 12 },
 
   hintWrap: {
     flex: 1,
@@ -199,12 +212,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   hintTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
-  hintBody: {
-    fontSize: 14,
-    opacity: 0.6,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+  hintBody: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 
   list: { paddingBottom: 32 },
   row: {
@@ -213,11 +221,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 8,
   },
-  albumArt: { width: 48, height: 48, borderRadius: 4, backgroundColor: '#eee' },
-  albumArtFallback: { backgroundColor: '#ddd' },
+  albumArt: { width: 48, height: 48, borderRadius: 4 },
   rowText: { flex: 1 },
   trackName: { fontSize: 16, fontWeight: '500' },
-  artist: { fontSize: 14, opacity: 0.6, marginTop: 2 },
-  duration: { fontSize: 12, opacity: 0.5, marginLeft: 8 },
-  empty: { textAlign: 'center', opacity: 0.5, marginTop: 32 },
+  artist: { fontSize: 14, marginTop: 2 },
+  duration: { fontSize: 12, marginLeft: 8 },
+  empty: { textAlign: 'center', marginTop: 32 },
 });

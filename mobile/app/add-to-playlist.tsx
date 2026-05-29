@@ -1,5 +1,4 @@
-// "Add to playlist" picker — opened from the pin-detail modal. Shows
-// the user's playlists; tapping one adds the pin and pops back.
+// "Add to playlist" picker — opened from the pin-detail modal.
 
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -11,14 +10,11 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
-import {
-  addPinToPlaylist,
-  listPlaylists,
-  type Playlist,
-} from '@/lib/playlists';
+import { Text, View, useThemeColors } from '@/components/Themed';
+import { addPinToPlaylist, listPlaylists, type Playlist } from '@/lib/playlists';
 
 export default function AddToPlaylistScreen() {
+  const c = useThemeColors();
   const { pinId } = useLocalSearchParams<{ pinId: string }>();
 
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -28,8 +24,6 @@ export default function AddToPlaylistScreen() {
   const load = useCallback(async () => {
     try {
       const all = await listPlaylists();
-      // Only show playlists the current user owns; adding to someone
-      // else's playlist isn't allowed by RLS anyway.
       setPlaylists(all.filter((p) => p.is_mine));
     } finally {
       setLoading(false);
@@ -53,7 +47,7 @@ export default function AddToPlaylistScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
+        <ActivityIndicator color={c.text} />
       </View>
     );
   }
@@ -66,13 +60,17 @@ export default function AddToPlaylistScreen() {
         keyExtractor={(p) => p.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>
+          <Text style={[styles.empty, { color: c.textMuted }]}>
             You don't have any playlists yet — make one in the Playlists tab first.
           </Text>
         }
         renderItem={({ item }) => (
           <Pressable
-            style={[styles.row, busyId === item.id && styles.disabled]}
+            style={[
+              styles.row,
+              { backgroundColor: c.card },
+              busyId === item.id && styles.disabled,
+            ]}
             onPress={() => add(item.id)}
             disabled={busyId !== null}
           >
@@ -80,11 +78,11 @@ export default function AddToPlaylistScreen() {
               <Text style={styles.rowTitle} numberOfLines={1}>
                 {item.title}
               </Text>
-              <Text style={styles.rowSub}>
+              <Text style={[styles.rowSub, { color: c.textMuted }]}>
                 {item.pin_count} pin{item.pin_count === 1 ? '' : 's'}
               </Text>
             </View>
-            {busyId === item.id && <ActivityIndicator />}
+            {busyId === item.id && <ActivityIndicator color={c.text} />}
           </Pressable>
         )}
       />
@@ -102,11 +100,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.03)',
   },
   rowText: { flex: 1 },
   rowTitle: { fontSize: 16, fontWeight: '600' },
-  rowSub: { fontSize: 12, opacity: 0.6, marginTop: 2 },
-  empty: { textAlign: 'center', opacity: 0.5, marginTop: 32 },
+  rowSub: { fontSize: 12, marginTop: 2 },
+  empty: { textAlign: 'center', marginTop: 32 },
   disabled: { opacity: 0.6 },
 });

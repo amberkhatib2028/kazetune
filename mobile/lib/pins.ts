@@ -15,6 +15,8 @@ export type Pin = {
   is_public: boolean;
   is_mine: boolean;
   preview_url: string | null;
+  album_image_url: string | null;
+  image_url: string | null;
 };
 
 export async function listPins(): Promise<Pin[]> {

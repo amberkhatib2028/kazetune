@@ -13,7 +13,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.kazetune",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "kazetune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
+        "NSCameraUsageDescription": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +27,13 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +42,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "kazetune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
+          "cameraPermission": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

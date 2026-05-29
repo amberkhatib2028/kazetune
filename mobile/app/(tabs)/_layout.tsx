@@ -46,6 +46,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="all-pins"
+        options={{
+          title: 'All pins',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'list.bullet', android: 'list', web: 'list' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="search"
         options={{
           title: 'Search',

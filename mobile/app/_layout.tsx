@@ -6,8 +6,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
 import { supabase } from '@/lib/supabase';
+import {
+  ThemePreferenceProvider,
+  useResolvedScheme,
+} from '@/lib/themePreference';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -43,7 +46,18 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  // ThemePreferenceProvider has to wrap everything that reads theme —
+  // including the nav <ThemeProvider> below — so an inner component
+  // (NavStack) reads the resolved scheme from context.
+  return (
+    <ThemePreferenceProvider>
+      <NavStack />
+    </ThemePreferenceProvider>
+  );
+}
+
+function NavStack() {
+  const colorScheme = useResolvedScheme();
   const router = useRouter();
   const segments = useSegments();
 
@@ -97,6 +111,10 @@ function RootLayoutNav() {
         <Stack.Screen
           name="add-to-playlist"
           options={{ presentation: 'modal', title: 'Add to playlist' }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{ presentation: 'modal', title: 'Settings' }}
         />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>

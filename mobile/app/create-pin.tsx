@@ -16,10 +16,12 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 
-import { Text, View } from '@/components/Themed';
+import { Text, View, useThemeColors } from '@/components/Themed';
+import { pickImage, uploadImage } from '@/lib/images';
 import { supabase } from '@/lib/supabase';
 
 export default function CreatePinScreen() {
+  const c = useThemeColors();
   const params = useLocalSearchParams<{
     trackId: string;
     trackName: string;
@@ -40,6 +42,24 @@ export default function CreatePinScreen() {
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  // User-uploaded photo for this pin. `localPhotoUri` is what's shown
+  // in the preview until we hit Save; on Save we upload and get back
+  // the public URL we actually store on the pin.
+  const [localPhotoUri, setLocalPhotoUri] = useState<string | null>(null);
+  const [pickingPhoto, setPickingPhoto] = useState(false);
+
+  const choosePhoto = async () => {
+    try {
+      setPickingPhoto(true);
+      const uri = await pickImage();
+      if (uri) setLocalPhotoUri(uri);
+    } catch (e: any) {
+      Alert.alert('Could not pick photo', e?.message ?? String(e));
+    } finally {
+      setPickingPhoto(false);
+    }
+  };
 
   const useCurrentLocation = async () => {
     try {
@@ -87,6 +107,14 @@ export default function CreatePinScreen() {
 
     try {
       setSaving(true);
+
+      // Upload the user photo first if they picked one. We do this
+      // before the INSERT so the pin row references a stable URL.
+      let uploadedUrl: string | null = null;
+      if (localPhotoUri) {
+        uploadedUrl = await uploadImage('pin', localPhotoUri);
+      }
+
       const { error } = await supabase.rpc('create_pin', {
         p_latitude: lat,
         p_longitude: lng,
@@ -98,6 +126,8 @@ export default function CreatePinScreen() {
         p_duration_seconds: dur,
         p_is_public: isPublic,
         p_preview_url: params.previewUrl ?? '',
+        p_album_image_url: params.albumImageUrl ?? '',
+        p_image_url: uploadedUrl ?? '',
       });
 
       if (error) throw error;
@@ -109,24 +139,35 @@ export default function CreatePinScreen() {
     }
   };
 
+  const inputStyle = [
+    styles.input,
+    {
+      borderColor: c.border,
+      backgroundColor: c.inputBackground,
+      color: c.inputText,
+    },
+  ];
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* --- Track preview (read-only) --- */}
-      <View style={styles.trackCard}>
+      <View style={[styles.trackCard, { backgroundColor: c.card }]}>
         {params.albumImageUrl ? (
           <Image source={{ uri: params.albumImageUrl }} style={styles.albumArt} />
         ) : (
-          <View style={[styles.albumArt, styles.albumArtFallback]} />
+          <View style={[styles.albumArt, { backgroundColor: c.card }]} />
         )}
         <View style={styles.trackText}>
           <Text style={styles.trackName} numberOfLines={2}>
             {params.trackName}
           </Text>
-          <Text style={styles.artist} numberOfLines={1}>
+          <Text
+            style={[styles.artist, { color: c.textMuted }]}
+            numberOfLines={1}
+          >
             {params.artistName}
           </Text>
           {trackDurationSec > 0 && (
-            <Text style={styles.trackDuration}>
+            <Text style={[styles.trackDuration, { color: c.textSubtle }]}>
               Track: {Math.floor(trackDurationSec / 60)}:
               {(trackDurationSec % 60).toString().padStart(2, '0')}
             </Text>
@@ -134,98 +175,142 @@ export default function CreatePinScreen() {
         </View>
       </View>
 
-      {/* --- Location --- */}
+      <Text style={styles.section}>Photo (optional)</Text>
+      <Pressable
+        style={[
+          styles.photoBox,
+          { backgroundColor: c.card, borderColor: c.border },
+          pickingPhoto && styles.disabled,
+        ]}
+        onPress={choosePhoto}
+        disabled={pickingPhoto}
+      >
+        {localPhotoUri ? (
+          <Image source={{ uri: localPhotoUri }} style={styles.photoPreview} />
+        ) : (
+          <Text style={[styles.photoHint, { color: c.textMuted }]}>
+            {pickingPhoto ? 'Opening…' : '+ Add a photo'}
+          </Text>
+        )}
+      </Pressable>
+      {localPhotoUri && (
+        <Pressable onPress={() => setLocalPhotoUri(null)} hitSlop={8}>
+          <Text style={[styles.photoClear, { color: c.textMuted }]}>
+            Remove photo
+          </Text>
+        </Pressable>
+      )}
+
       <Text style={styles.section}>Location</Text>
       <Pressable
-        style={[styles.locButton, locating && styles.disabled]}
+        style={[
+          styles.locButton,
+          { backgroundColor: c.walkingActive },
+          locating && styles.disabled,
+        ]}
         onPress={useCurrentLocation}
         disabled={locating}
       >
         {locating ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.locButtonText}>Use my location</Text>
+          <Text style={[styles.locButtonText, { color: '#fff' }]}>
+            Use my location
+          </Text>
         )}
       </Pressable>
 
       <View style={styles.row}>
         <View style={styles.col}>
-          <Text style={styles.label}>Latitude</Text>
+          <Text style={[styles.label, { color: c.textMuted }]}>Latitude</Text>
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             value={latitude}
             onChangeText={setLatitude}
             placeholder="40.34942"
-            placeholderTextColor="#999"
+            placeholderTextColor={c.placeholder}
             keyboardType="numeric"
           />
         </View>
         <View style={styles.col}>
-          <Text style={styles.label}>Longitude</Text>
+          <Text style={[styles.label, { color: c.textMuted }]}>Longitude</Text>
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             value={longitude}
             onChangeText={setLongitude}
             placeholder="-74.65691"
-            placeholderTextColor="#999"
+            placeholderTextColor={c.placeholder}
             keyboardType="numeric"
           />
         </View>
       </View>
 
-      <Text style={styles.label}>Place name (optional)</Text>
+      <Text style={[styles.label, { color: c.textMuted }]}>
+        Place name (optional)
+      </Text>
       <TextInput
-        style={styles.input}
+        style={inputStyle}
         value={placeName}
         onChangeText={setPlaceName}
         placeholder="e.g. Firestone Library"
-        placeholderTextColor="#999"
+        placeholderTextColor={c.placeholder}
       />
 
-      {/* --- Clip --- */}
       <Text style={styles.section}>Clip</Text>
       <View style={styles.row}>
         <View style={styles.col}>
-          <Text style={styles.label}>Start at (sec)</Text>
+          <Text style={[styles.label, { color: c.textMuted }]}>
+            Start at (sec)
+          </Text>
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             value={startSeconds}
             onChangeText={setStartSeconds}
             placeholder="0"
-            placeholderTextColor="#999"
+            placeholderTextColor={c.placeholder}
             keyboardType="number-pad"
           />
         </View>
         <View style={styles.col}>
-          <Text style={styles.label}>Duration (sec)</Text>
+          <Text style={[styles.label, { color: c.textMuted }]}>
+            Duration (sec)
+          </Text>
           <TextInput
-            style={styles.input}
+            style={inputStyle}
             value={durationSeconds}
             onChangeText={setDurationSeconds}
             placeholder="20"
-            placeholderTextColor="#999"
+            placeholderTextColor={c.placeholder}
             keyboardType="number-pad"
           />
         </View>
       </View>
-      <Text style={styles.hint}>Clip must be at least 20 seconds.</Text>
+      <Text style={[styles.hint, { color: c.textSubtle }]}>
+        Clip must be at least 20 seconds.
+      </Text>
 
-      {/* --- Public --- */}
       <View style={[styles.row, styles.publicRow]}>
-        <Text style={styles.label}>Public (others can see)</Text>
+        <Text style={[styles.label, { color: c.textMuted }]}>
+          Public (others can see)
+        </Text>
         <Switch value={isPublic} onValueChange={setIsPublic} />
       </View>
 
-      {/* --- Save --- */}
       <Pressable
-        style={[styles.saveButton, saving && styles.disabled]}
+        style={[
+          styles.saveButton,
+          { backgroundColor: c.primary },
+          saving && styles.disabled,
+        ]}
         onPress={save}
         disabled={saving}
       >
         {saving ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={c.primaryText} />
         ) : (
-          <Text style={styles.saveButtonText}>Save pin</Text>
+          <Text style={[styles.saveButtonText, { color: c.primaryText }]}>
+            Save pin
+          </Text>
         )}
       </Pressable>
     </ScrollView>
@@ -239,52 +324,64 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: 'center',
     padding: 12,
-    backgroundColor: 'rgba(0,0,0,0.04)',
     borderRadius: 12,
     marginBottom: 16,
   },
-  albumArt: { width: 72, height: 72, borderRadius: 6, backgroundColor: '#ddd' },
-  albumArtFallback: { backgroundColor: '#ccc' },
+  albumArt: { width: 72, height: 72, borderRadius: 6 },
   trackText: { flex: 1, gap: 2 },
   trackName: { fontSize: 16, fontWeight: '600' },
-  artist: { fontSize: 13, opacity: 0.7 },
-  trackDuration: { fontSize: 11, opacity: 0.5, marginTop: 4 },
+  artist: { fontSize: 13 },
+  trackDuration: { fontSize: 11, marginTop: 4 },
 
   section: { fontSize: 18, fontWeight: '700', marginTop: 16, marginBottom: 8 },
-  label: { fontSize: 12, opacity: 0.6, marginTop: 8, textTransform: 'uppercase' },
+  label: { fontSize: 12, marginTop: 8, textTransform: 'uppercase' },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#fff',
     marginTop: 4,
   },
-  hint: { fontSize: 12, opacity: 0.5, marginTop: 4 },
+  hint: { fontSize: 12, marginTop: 4 },
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
   publicRow: { alignItems: 'center', justifyContent: 'space-between', marginTop: 16 },
 
   locButton: {
-    backgroundColor: '#222',
     paddingVertical: 12,
     borderRadius: 24,
     alignItems: 'center',
     marginBottom: 8,
   },
-  locButtonText: { color: 'white', fontWeight: '600' },
+  locButtonText: { fontWeight: '600' },
 
   saveButton: {
-    backgroundColor: '#1DB954',
     paddingVertical: 16,
     borderRadius: 24,
     alignItems: 'center',
     marginTop: 32,
   },
-  saveButtonText: { color: 'white', fontWeight: '700', fontSize: 16 },
+  saveButtonText: { fontWeight: '700', fontSize: 16 },
 
   disabled: { opacity: 0.6 },
+
+  photoBox: {
+    height: 180,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  photoPreview: { width: '100%', height: '100%' },
+  photoHint: { fontSize: 14, fontWeight: '600' },
+  photoClear: {
+    marginTop: 8,
+    fontSize: 12,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });

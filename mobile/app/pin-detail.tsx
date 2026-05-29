@@ -14,14 +14,16 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
+  View as RNView,
 } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Text, View, useThemeColors } from '@/components/Themed';
 import { getCurrentPinId, playPinClip, stopPinClip } from '@/lib/audio';
 import { listPins, type Pin } from '@/lib/pins';
 import { supabase } from '@/lib/supabase';
 
 export default function PinDetailScreen() {
+  const c = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [pin, setPin] = useState<Pin | null>(null);
@@ -131,7 +133,7 @@ export default function PinDetailScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
+        <ActivityIndicator color={c.text} />
       </View>
     );
   }
@@ -139,9 +141,14 @@ export default function PinDetailScreen() {
   if (!pin) {
     return (
       <View style={styles.center}>
-        <Text style={styles.notFound}>Pin not found.</Text>
-        <Pressable style={styles.button} onPress={() => router.back()}>
-          <Text style={styles.buttonText}>Close</Text>
+        <Text style={[styles.notFound, { color: c.textMuted }]}>
+          Pin not found.
+        </Text>
+        <Pressable
+          style={[styles.button, { backgroundColor: c.walkingActive }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.buttonText, { color: '#fff' }]}>Close</Text>
         </Pressable>
       </View>
     );
@@ -149,54 +156,62 @@ export default function PinDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* No album art stored on pin (only spotify_track_id). Use a
-          placeholder with track initial — keeps the layout balanced
-          without an extra Spotify roundtrip. */}
-      <View style={styles.artFallback}>
-        <Text style={styles.artLetter}>
-          {pin.track_name.charAt(0).toUpperCase()}
-        </Text>
-      </View>
+      {pin.image_url || pin.album_image_url ? (
+        <Image
+          source={{ uri: pin.image_url ?? pin.album_image_url! }}
+          style={styles.albumArt}
+        />
+      ) : (
+        <RNView style={[styles.artFallback, { backgroundColor: c.primary }]}>
+          <Text style={[styles.artLetter, { color: c.primaryText }]}>
+            {pin.track_name.charAt(0).toUpperCase()}
+          </Text>
+        </RNView>
+      )}
 
       <Text style={styles.trackName} numberOfLines={2}>
         {pin.track_name}
       </Text>
-      <Text style={styles.artist} numberOfLines={1}>
+      <Text style={[styles.artist, { color: c.textMuted }]} numberOfLines={1}>
         {pin.artist_name}
       </Text>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Place</Text>
+        <Text style={[styles.label, { color: c.textMuted }]}>Place</Text>
         <Text style={styles.value}>{pin.place_name ?? '(unnamed)'}</Text>
-        <Text style={styles.coords}>
+        <Text style={[styles.coords, { color: c.textSubtle }]}>
           {pin.latitude.toFixed(5)}, {pin.longitude.toFixed(5)}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Clip</Text>
+        <Text style={[styles.label, { color: c.textMuted }]}>Clip</Text>
         <Text style={styles.value}>
           Starts at {pin.start_seconds}s · {pin.duration_seconds}s long
         </Text>
         {!pin.preview_url && (
-          <Text style={styles.muted}>
+          <Text style={[styles.muted, { color: c.textSubtle }]}>
             Spotify doesn't have a preview for this track — playback won't work.
           </Text>
         )}
       </View>
 
       <Pressable
-        style={[styles.playButton, !pin.preview_url && styles.disabled]}
+        style={[
+          styles.playButton,
+          { backgroundColor: c.primary },
+          !pin.preview_url && styles.disabled,
+        ]}
         onPress={togglePlay}
         disabled={!pin.preview_url}
       >
-        <Text style={styles.playButtonText}>
+        <Text style={[styles.playButtonText, { color: c.primaryText }]}>
           {playing ? '■ Stop' : '▶ Play clip'}
         </Text>
       </Pressable>
 
       <Pressable
-        style={styles.secondaryButton}
+        style={[styles.secondaryButton, { backgroundColor: c.secondaryButton }]}
         onPress={() =>
           router.push({
             pathname: '/add-to-playlist',
@@ -204,7 +219,9 @@ export default function PinDetailScreen() {
           })
         }
       >
-        <Text style={styles.secondaryButtonText}>+ Add to playlist</Text>
+        <Text style={[styles.secondaryButtonText, { color: c.text }]}>
+          + Add to playlist
+        </Text>
       </Pressable>
 
       {pin.is_mine && (
@@ -219,11 +236,17 @@ export default function PinDetailScreen() {
           </View>
 
           <Pressable
-            style={[styles.deleteButton, busy && styles.disabled]}
+            style={[
+              styles.deleteButton,
+              { borderColor: c.danger },
+              busy && styles.disabled,
+            ]}
             onPress={deletePin}
             disabled={busy}
           >
-            <Text style={styles.deleteButtonText}>Delete pin</Text>
+            <Text style={[styles.deleteButtonText, { color: c.danger }]}>
+              Delete pin
+            </Text>
           </Pressable>
         </>
       )}
@@ -235,46 +258,49 @@ const styles = StyleSheet.create({
   container: { padding: 24, alignItems: 'center', paddingBottom: 64 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
+  albumArt: {
+    width: 140,
+    height: 140,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
   artFallback: {
     width: 140,
     height: 140,
     borderRadius: 12,
-    backgroundColor: '#1DB954',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
-  artLetter: { fontSize: 64, fontWeight: '800', color: 'white' },
+  artLetter: { fontSize: 64, fontWeight: '800' },
 
   trackName: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
-  artist: { fontSize: 16, opacity: 0.7, marginTop: 4, textAlign: 'center' },
+  artist: { fontSize: 16, marginTop: 4, textAlign: 'center' },
 
   section: { width: '100%', marginTop: 24, gap: 4 },
-  label: { fontSize: 11, opacity: 0.6, textTransform: 'uppercase' },
+  label: { fontSize: 11, textTransform: 'uppercase' },
   value: { fontSize: 16, fontWeight: '500' },
-  coords: { fontSize: 12, opacity: 0.5, fontFamily: 'SpaceMono' },
-  muted: { fontSize: 12, opacity: 0.5, marginTop: 4 },
+  coords: { fontSize: 12, fontFamily: 'SpaceMono' },
+  muted: { fontSize: 12, marginTop: 4 },
 
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   publicRow: { width: '100%', marginTop: 24 },
 
   playButton: {
     marginTop: 32,
-    backgroundColor: '#1DB954',
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 32,
     minWidth: 200,
     alignItems: 'center',
   },
-  playButtonText: { color: 'white', fontWeight: '700', fontSize: 16 },
+  playButtonText: { fontWeight: '700', fontSize: 16 },
 
   secondaryButton: {
     marginTop: 12,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.07)',
     minWidth: 180,
     alignItems: 'center',
   },
@@ -286,21 +312,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#c00',
     minWidth: 180,
     alignItems: 'center',
   },
-  deleteButtonText: { color: '#c00', fontWeight: '700' },
+  deleteButtonText: { fontWeight: '700' },
 
   button: {
     marginTop: 16,
-    backgroundColor: '#444',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
   },
-  buttonText: { color: 'white', fontWeight: '600' },
+  buttonText: { fontWeight: '600' },
 
-  notFound: { fontSize: 16, opacity: 0.7 },
+  notFound: { fontSize: 16 },
   disabled: { opacity: 0.4 },
 });

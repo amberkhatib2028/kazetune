@@ -4,7 +4,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Text, View, useThemeColors } from '@/components/Themed';
 
 type Step = { n: string; title: string; body: string };
 
@@ -32,26 +32,33 @@ const STEPS: Step[] = [
 ];
 
 export default function HowItWorksScreen() {
+  const c = useThemeColors();
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>kazetune</Text>
-      <Text style={styles.tagline}>Songs tied to places.</Text>
+      <Text style={[styles.tagline, { color: c.textMuted }]}>
+        Songs tied to places.
+      </Text>
 
       {STEPS.map((s) => (
         <View key={s.n} style={styles.step}>
-          <View style={styles.stepNumber}>
-            <Text style={styles.stepNumberText}>{s.n}</Text>
+          <View style={[styles.stepNumber, { backgroundColor: c.primary }]}>
+            <Text style={[styles.stepNumberText, { color: c.primaryText }]}>
+              {s.n}
+            </Text>
           </View>
           <View style={styles.stepText}>
             <Text style={styles.stepTitle}>{s.title}</Text>
-            <Text style={styles.stepBody}>{s.body}</Text>
+            <Text style={[styles.stepBody, { color: c.textMuted }]}>
+              {s.body}
+            </Text>
           </View>
         </View>
       ))}
 
-      <View style={styles.note}>
+      <View style={[styles.note, { backgroundColor: c.card }]}>
         <Text style={styles.noteTitle}>A heads up about audio</Text>
-        <Text style={styles.noteBody}>
+        <Text style={[styles.noteBody, { color: c.textMuted }]}>
           Spotify removed audio previews from a lot of tracks in 2024.
           If a pin shows "(no preview)", the geofence still fires — there's
           just nothing to play.
