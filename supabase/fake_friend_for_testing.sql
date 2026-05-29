@@ -13,7 +13,7 @@
 DO $$
 DECLARE
     fake_user_id uuid := gen_random_uuid();
-    my_user_id   uuid := 'YOUR_AUTH_USER_ID_HERE'::uuid;
+    my_user_id   uuid := '413dbcf9-6610-441a-a0ce-2fabf9f1f9f0'::uuid;
 BEGIN
     -- Bare-minimum auth.users row.
     INSERT INTO auth.users (
