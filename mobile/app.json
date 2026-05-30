@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "kazetune",
+    "name": "KazeTune",
     "slug": "kazetune",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,20 +10,20 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FF6B9D"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.kazetune",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "kazetune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
-        "NSCameraUsageDescription": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture.",
+        "NSPhotoLibraryUsageDescription": "KazeTune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
+        "NSCameraUsageDescription": "KazeTune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture.",
         "UIBackgroundModes": ["audio", "location"]
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FF6B9D",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -52,15 +52,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "kazetune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
-          "cameraPermission": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture."
+          "photosPermission": "KazeTune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
+          "cameraPermission": "KazeTune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "kazetune needs your location even in the background so it can play a pinned song clip when you walk past it.",
-          "locationWhenInUsePermission": "kazetune needs your location to detect when you walk past a pin.",
+          "locationAlwaysAndWhenInUsePermission": "KazeTune needs your location even in the background so it can play a pinned song clip when you walk past it.",
+          "locationWhenInUsePermission": "KazeTune needs your location to detect when you walk past a pin.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }

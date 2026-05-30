@@ -35,7 +35,7 @@ export default function HowItWorksScreen() {
   const c = useThemeColors();
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>kazetune</Text>
+      <Text style={styles.title}>KazeTune</Text>
       <Text style={[styles.tagline, { color: c.textMuted }]}>
         Songs tied to places.
       </Text>

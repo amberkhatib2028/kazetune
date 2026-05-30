@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
+import { isOnboardingShown, markOnboardingShown } from '@/lib/onboarding';
 import { supabase } from '@/lib/supabase';
 // Side-effect import: runs the module-top-level TaskManager.defineTask
 // for our background geofence task. Required by expo-task-manager (the
@@ -96,6 +97,24 @@ function NavStack() {
     }
   }, [authReady, session, segments, router]);
 
+  // First-launch onboarding: pop the "How it works" modal once after
+  // the user is signed in and on the tabs. We check exactly once per
+  // session-mount; subsequent reopens of the modal go through the (i)
+  // button on the Map tab.
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  useEffect(() => {
+    if (!authReady || !session || onboardingChecked) return;
+    if (segments[0] === 'login') return; // wait until past the auth gate
+    setOnboardingChecked(true);
+    (async () => {
+      if (await isOnboardingShown()) return;
+      await markOnboardingShown();
+      // Small defer so the (tabs) route has a chance to mount before
+      // we stack the modal on top — otherwise router.push can no-op.
+      setTimeout(() => router.push('/modal'), 300);
+    })();
+  }, [authReady, session, segments, router, onboardingChecked]);
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
@@ -125,7 +144,14 @@ function NavStack() {
           name="walk-summary"
           options={{ presentation: 'modal', title: 'Walk' }}
         />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="playlist-route"
+          options={{ presentation: 'modal', title: 'Route' }}
+        />
+        <Stack.Screen
+          name="modal"
+          options={{ presentation: 'modal', title: 'How it works' }}
+        />
       </Stack>
     </ThemeProvider>
   );

@@ -49,9 +49,9 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>kazetune</Text>
+      <Text style={styles.title}>KazeTune</Text>
       <Text style={[styles.subtitle, { color: c.textMuted }]}>
-        Pin songs to places.
+        Go where the wind takes you.
       </Text>
 
       <Pressable

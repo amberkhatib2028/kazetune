@@ -3,9 +3,11 @@
 // (notifications, privacy defaults for new pins, etc.) drop in here as
 // new sections.
 
+import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Pressable } from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { resetOnboarding } from '@/lib/onboarding';
 import {
   useThemePreference,
   type ThemePref,
@@ -70,6 +72,44 @@ export default function SettingsScreen() {
       <Text style={[styles.footer, { color: c.textSubtle }]}>
         Theme changes apply instantly.
       </Text>
+
+      <Text style={[styles.sectionLabel, { color: c.textMuted, marginTop: 32 }]}>
+        Help
+      </Text>
+      <View style={[styles.group, { backgroundColor: c.card }]}>
+        <Pressable
+          style={styles.row}
+          onPress={() => {
+            router.push('/modal');
+          }}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>Show "How it works" again</Text>
+            <Text style={[styles.rowHint, { color: c.textMuted }]}>
+              Re-open the first-launch walkthrough.
+            </Text>
+          </View>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.row,
+            {
+              borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: c.separator,
+            },
+          ]}
+          onPress={async () => {
+            await resetOnboarding();
+          }}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>Reset onboarding flag</Text>
+            <Text style={[styles.rowHint, { color: c.textMuted }]}>
+              Next launch will auto-pop "How it works" again.
+            </Text>
+          </View>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }

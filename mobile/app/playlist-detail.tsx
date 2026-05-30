@@ -154,6 +154,26 @@ export default function PlaylistDetailScreen() {
             {walking ? 'Stop walking' : '▶ Walk this playlist'}
           </Text>
         </Pressable>
+        <Pressable
+          style={[
+            styles.routeBtn,
+            { borderColor: c.primary },
+            pins.length < 2 && styles.disabled,
+          ]}
+          onPress={() =>
+            // Cast: expo-router auto-generates the typed-route table
+            // the first time Metro restarts after adding a new file.
+            router.push({
+              pathname: '/playlist-route' as never,
+              params: { id },
+            } as never)
+          }
+          disabled={pins.length < 2}
+        >
+          <Text style={[styles.routeBtnText, { color: c.primary }]}>
+            View suggested route
+          </Text>
+        </Pressable>
         {walkingMsg && (
           <Text style={[styles.walkMsg, { color: c.textMuted }]}>
             {walkingMsg}
@@ -330,6 +350,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   walkBtnText: { fontWeight: '700' },
+  routeBtn: {
+    marginTop: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  routeBtnText: { fontWeight: '600' },
   walkMsg: { fontSize: 12, marginTop: 6 },
 
   nowPlaying: {
