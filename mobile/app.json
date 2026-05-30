@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.anonymous.kazetune",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "kazetune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
-        "NSCameraUsageDescription": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture."
+        "NSCameraUsageDescription": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture.",
+        "UIBackgroundModes": ["audio", "location"]
       }
     },
     "android": {
@@ -42,12 +43,26 @@
     },
     "plugins": [
       "expo-router",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true
+        }
+      ],
       [
         "expo-image-picker",
         {
           "photosPermission": "kazetune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
           "cameraPermission": "kazetune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "kazetune needs your location even in the background so it can play a pinned song clip when you walk past it.",
+          "locationWhenInUsePermission": "kazetune needs your location to detect when you walk past a pin.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ]
     ],

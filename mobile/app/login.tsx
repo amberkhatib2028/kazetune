@@ -23,7 +23,12 @@ export default function LoginScreen() {
     try {
       setErrorText(null);
       setLoading(true);
-      const redirectTo = makeRedirectUri();
+      // Force the app's deep link scheme. Without this, makeRedirectUri()
+      // in a dev build can return the Expo dev server URL (e.g.
+      // http://localhost:8081), which Safari on the simulator can't
+      // load → Spotify's OAuth callback dead-ends. `native:` takes
+      // precedence over all other detection per the SDK 55 docs.
+      const redirectTo = makeRedirectUri({ native: 'kazetune://' });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'spotify',
         options: { redirectTo, skipBrowserRedirect: true, scopes: SPOTIFY_SCOPES },

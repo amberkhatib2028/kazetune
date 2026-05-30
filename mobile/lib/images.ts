@@ -56,9 +56,12 @@ export async function uploadImage(
   if (!user) throw new Error('Not signed in');
 
   const ext = guessExt(localUri);
+  // Every path has 3 segments — `<kind>/<user_id>/<filename>` — so the
+  // storage RLS policy can check split_part(name, '/', 2) = auth.uid()
+  // uniformly across pin, playlist, and avatar uploads.
   const path =
     kind === 'avatar'
-      ? `avatar/${user.id}.${ext}`
+      ? `avatar/${user.id}/avatar.${ext}`
       : `${kind}/${user.id}/${Date.now()}-${rand6()}.${ext}`;
 
   // RN + Supabase storage: pull the file as ArrayBuffer rather than Blob.

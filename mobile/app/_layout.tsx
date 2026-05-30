@@ -7,6 +7,11 @@ import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { supabase } from '@/lib/supabase';
+// Side-effect import: runs the module-top-level TaskManager.defineTask
+// for our background geofence task. Required by expo-task-manager (the
+// task must be defined before iOS/Android tries to invoke it on a
+// background wake-up). Keep this above any other top-level work.
+import '@/lib/backgroundGeofencing';
 import {
   ThemePreferenceProvider,
   useResolvedScheme,
@@ -115,6 +120,10 @@ function NavStack() {
         <Stack.Screen
           name="settings"
           options={{ presentation: 'modal', title: 'Settings' }}
+        />
+        <Stack.Screen
+          name="walk-summary"
+          options={{ presentation: 'modal', title: 'Walk' }}
         />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>

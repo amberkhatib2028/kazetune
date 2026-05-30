@@ -16,8 +16,19 @@ let audioModeReady = false;
 async function ensureAudioMode() {
   if (audioModeReady) return;
   try {
-    // iOS: play even if the device is on silent.
-    await setAudioModeAsync({ playsInSilentMode: true });
+    // iOS:
+    //   playsInSilentMode      — play even if the ringer switch is off
+    //   shouldPlayInBackground — keep the audio session alive when the
+    //                             app is backgrounded or the screen is
+    //                             locked (paired with the
+    //                             enableBackgroundPlayback flag in
+    //                             app.json's expo-audio plugin config)
+    //   interruptionMode 'doNotMix' — kazetune is the focused audio
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      interruptionMode: 'doNotMix',
+    });
   } catch {
     // No-op on web / older iOS.
   }
@@ -37,6 +48,17 @@ export async function playPinClip(pin: Pin): Promise<boolean> {
   await ensureAudioMode();
 
   const player = createAudioPlayer(pin.preview_url);
+  // Surface the track on the iOS lock screen / Android media notification
+  // so background playback is identifiable. setActiveForLockScreen is
+  // documented in expo-audio (SDK 55); silently ignored on web.
+  try {
+    (player as any).setActiveForLockScreen?.(true, {
+      title: pin.track_name,
+      artist: pin.artist_name,
+    });
+  } catch {
+    // No-op.
+  }
   player.play();
   currentPlayer = player;
   currentPinId = pin.id;
