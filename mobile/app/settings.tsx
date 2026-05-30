@@ -9,16 +9,22 @@
 // Themed View is only used for full-bleed surfaces (the group cards).
 
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Pressable,
   Switch,
+  TextInput,
   View as RNView,
 } from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { setUsername } from '@/lib/friends';
 import { resetOnboarding } from '@/lib/onboarding';
+import { supabase } from '@/lib/supabase';
 import {
   useThemePreference,
   type ThemePref,
@@ -37,13 +43,128 @@ export default function SettingsScreen() {
   const { policy, setPolicy } = useWalkingPreference();
   const pickUpPublic = policy !== 'never';
 
+  // --- Username state ----------------------------------------------
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState('');
+  const [savingUsername, setSavingUsername] = useState(false);
+
+  // Load on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', sessionData.session.user.id)
+        .single();
+      if (!cancelled && data) setCurrentUsername(data.username);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const startEditingUsername = () => {
+    setUsernameDraft(currentUsername ?? '');
+    setEditingUsername(true);
+  };
+
+  const saveUsername = async () => {
+    const cleaned = usernameDraft.trim().toLowerCase().replace(/^@/, '');
+    if (cleaned === (currentUsername ?? '')) {
+      // No change — just close.
+      setEditingUsername(false);
+      return;
+    }
+    try {
+      setSavingUsername(true);
+      await setUsername(cleaned);
+      setCurrentUsername(cleaned);
+      setEditingUsername(false);
+    } catch (e: any) {
+      Alert.alert(
+        'Could not set username',
+        e?.message ??
+          'Try a different one — 3-30 lowercase letters, numbers, or _.',
+      );
+    } finally {
+      setSavingUsername(false);
+    }
+  };
+
   return (
     <ScrollView
       style={{ backgroundColor: c.background }}
       contentContainerStyle={styles.container}
     >
-      {/* ---- Appearance --------------------------------------------- */}
+      {/* ---- Account ------------------------------------------------ */}
       <Text style={[styles.sectionLabel, { color: c.textMuted }]}>
+        Account
+      </Text>
+      <View style={[styles.group, { backgroundColor: c.card }]}>
+        {editingUsername ? (
+          <RNView style={[styles.row, { gap: 8 }]}>
+            <Text style={[styles.atSign, { color: c.textMuted }]}>@</Text>
+            <TextInput
+              style={[
+                styles.usernameInput,
+                {
+                  color: c.inputText,
+                  backgroundColor: c.inputBackground,
+                  borderColor: c.border,
+                },
+              ]}
+              value={usernameDraft}
+              onChangeText={setUsernameDraft}
+              placeholder="amber_g"
+              placeholderTextColor={c.placeholder}
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={30}
+              editable={!savingUsername}
+            />
+            {savingUsername ? (
+              <ActivityIndicator color={c.text} />
+            ) : (
+              <>
+                <Pressable
+                  onPress={() => setEditingUsername(false)}
+                  hitSlop={8}
+                >
+                  <Text style={[styles.linkBtn, { color: c.textMuted }]}>
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable onPress={saveUsername} hitSlop={8}>
+                  <Text style={[styles.linkBtn, { color: c.primary }]}>
+                    Save
+                  </Text>
+                </Pressable>
+              </>
+            )}
+          </RNView>
+        ) : (
+          <Pressable style={styles.row} onPress={startEditingUsername}>
+            <RNView style={styles.rowText}>
+              <Text style={styles.rowTitle}>Username</Text>
+              <Text style={[styles.rowHint, { color: c.textMuted }]}>
+                {currentUsername
+                  ? `@${currentUsername}`
+                  : 'Pick a handle so friends can find + scan you.'}
+              </Text>
+            </RNView>
+            <Text style={[styles.linkBtn, { color: c.primary }]}>
+              {currentUsername ? 'Change' : 'Set'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* ---- Appearance --------------------------------------------- */}
+      <Text style={[styles.sectionLabel, { color: c.textMuted, marginTop: 32 }]}>
         Appearance
       </Text>
       <View style={[styles.group, { backgroundColor: c.card }]}>
@@ -255,4 +376,15 @@ const styles = StyleSheet.create({
   },
   radioInner: { width: 10, height: 10, borderRadius: 5 },
   footer: { fontSize: 12, textAlign: 'center', marginTop: 24 },
+
+  atSign: { fontSize: 16, fontWeight: '700' },
+  usernameInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 16,
+  },
+  linkBtn: { fontSize: 14, fontWeight: '700' },
 });

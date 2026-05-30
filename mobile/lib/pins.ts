@@ -4,6 +4,10 @@ import { supabase } from './supabase';
 
 export type Pin = {
   id: string;
+  // Optional because PlaylistPin (which extends Pin structurally) and
+  // older RPC responses don't include it. Treat absence as "not the
+  // user's friend" for filtering purposes.
+  user_id?: string;
   latitude: number;
   longitude: number;
   place_name: string | null;

@@ -46,6 +46,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="feed"
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'sparkles', android: 'auto_awesome', web: 'star' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="all-pins"
         options={{
           title: 'All pins',

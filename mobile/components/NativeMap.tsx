@@ -119,6 +119,19 @@ export default function NativeMap() {
         initialRegion={initialRegion}
         showsUserLocation
         showsMyLocationButton={false}
+        onLongPress={(e) => {
+          // Long-press drops a "pin a song here" flow at the tapped
+          // coordinate. We route to a song-picker modal that forwards
+          // both the picked track and these coords to /create-pin.
+          const { latitude: lat, longitude: lng } = e.nativeEvent.coordinate;
+          router.push({
+            pathname: '/pick-song-for-location' as never,
+            params: {
+              latitude: lat.toString(),
+              longitude: lng.toString(),
+            },
+          } as never);
+        }}
       >
         {pins.map((pin) => (
           <PinMarker

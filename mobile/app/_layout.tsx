@@ -128,6 +128,10 @@ function NavStack() {
           options={{ presentation: 'modal', title: 'New pin' }}
         />
         <Stack.Screen
+          name="pick-song-for-location"
+          options={{ presentation: 'modal', title: 'Pick a song' }}
+        />
+        <Stack.Screen
           name="pin-detail"
           options={{ presentation: 'modal', title: 'Pin' }}
         />
@@ -146,6 +150,10 @@ function NavStack() {
         <Stack.Screen
           name="settings"
           options={{ presentation: 'modal', title: 'Settings' }}
+        />
+        <Stack.Screen
+          name="add-friend/[username]"
+          options={{ presentation: 'modal', title: 'Add friend' }}
         />
         <Stack.Screen
           name="walk-summary"

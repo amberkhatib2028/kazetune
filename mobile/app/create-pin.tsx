@@ -29,13 +29,17 @@ export default function CreatePinScreen() {
     durationMs?: string;
     albumImageUrl?: string;
     previewUrl?: string;
+    // Optional — passed in when entering this screen from the
+    // long-press-on-map flow. Empty otherwise (Search-tab entry point).
+    latitude?: string;
+    longitude?: string;
   }>();
 
   const trackDurationMs = parseInt(params.durationMs ?? '0', 10);
   const trackDurationSec = Math.floor(trackDurationMs / 1000);
 
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [latitude, setLatitude] = useState(params.latitude ?? '');
+  const [longitude, setLongitude] = useState(params.longitude ?? '');
   const [placeName, setPlaceName] = useState('');
   const [startSeconds, setStartSeconds] = useState('0');
   const [durationSeconds, setDurationSeconds] = useState('20');
