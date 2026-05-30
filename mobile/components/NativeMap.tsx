@@ -3,7 +3,7 @@
 // over the global pin set.
 
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,12 +12,14 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView from 'react-native-maps';
 import * as Location from 'expo-location';
 
+import PinMarker from '@/components/PinMarker';
 import { useThemeColors } from '@/components/Themed';
 import { listPins, type Pin } from '@/lib/pins';
 import { useWalkingMode } from '@/lib/useWalkingMode';
+import { usePublicPinPolicy } from '@/lib/walkingPreference';
 
 const FALLBACK_REGION = {
   latitude: 40.34942,
@@ -36,7 +38,17 @@ export default function NativeMap() {
   // user's zoom/pan is theirs to keep.
   const hasFitOnce = useRef(false);
 
-  const { walking, nowPlaying, message: walkingMsg, toggle } = useWalkingMode(pins);
+  // Respect the user's "pick up public pins" preference. The map
+  // still displays every visible pin; this only affects which ones
+  // fire geofence triggers during a walk.
+  const policy = usePublicPinPolicy();
+  const walkablePins = useMemo(
+    () => (policy === 'never' ? pins.filter((p) => p.is_mine) : pins),
+    [pins, policy],
+  );
+
+  const { walking, nowPlaying, message: walkingMsg, toggle } =
+    useWalkingMode(walkablePins);
 
   const load = useCallback(async () => {
     try {
@@ -109,12 +121,10 @@ export default function NativeMap() {
         showsMyLocationButton={false}
       >
         {pins.map((pin) => (
-          <Marker
+          <PinMarker
             key={pin.id}
-            coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
-            title={pin.place_name ?? pin.track_name}
-            description={`${pin.track_name} — ${pin.artist_name}`}
-            pinColor={pin.is_mine ? c.primary : '#FF3B30'}
+            pin={pin}
+            primaryColor={c.primary}
             onCalloutPress={() =>
               router.push({ pathname: '/pin-detail', params: { id: pin.id } })
             }

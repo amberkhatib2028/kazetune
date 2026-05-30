@@ -226,6 +226,20 @@ export default function PinDetailScreen() {
 
       {pin.is_mine && (
         <>
+          <Pressable
+            style={[styles.secondaryButton, { backgroundColor: c.secondaryButton }]}
+            onPress={() =>
+              router.push({
+                pathname: '/edit-pin' as never,
+                params: { id: pin.id },
+              } as never)
+            }
+          >
+            <Text style={[styles.secondaryButtonText, { color: c.text }]}>
+              ✎ Edit pin
+            </Text>
+          </Pressable>
+
           <View style={[styles.row, styles.publicRow]}>
             <Text style={styles.value}>Public (others can see)</Text>
             <Switch

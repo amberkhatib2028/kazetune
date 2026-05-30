@@ -3,8 +3,9 @@
 // react-native-maps blowing up the web bundle on import.
 
 import { StyleSheet } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Polyline } from 'react-native-maps';
 
+import PinMarker from '@/components/PinMarker';
 import type { Pin } from '@/lib/pins';
 
 type Props = {
@@ -38,13 +39,7 @@ export default function WalkSummaryMap({
         />
       )}
       {pins.map((p) => (
-        <Marker
-          key={p.id}
-          coordinate={{ latitude: p.latitude, longitude: p.longitude }}
-          title={p.track_name}
-          description={p.artist_name}
-          pinColor={primaryColor}
-        />
+        <PinMarker key={p.id} pin={p} primaryColor={primaryColor} />
       ))}
     </MapView>
   );

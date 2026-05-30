@@ -64,7 +64,8 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
-      ]
+      ],
+      "./plugins/withKazetuneInfoPlist"
     ],
     "experiments": {
       "typedRoutes": true

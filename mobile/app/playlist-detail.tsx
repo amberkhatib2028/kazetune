@@ -2,7 +2,7 @@
 // order, and lets the owner remove pins or delete the playlist.
 
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { listPins, type Pin } from '@/lib/pins';
 import {
   deletePlaylist,
   listPlaylistPins,
@@ -24,6 +25,7 @@ import {
   type PlaylistPin,
 } from '@/lib/playlists';
 import { useWalkingMode } from '@/lib/useWalkingMode';
+import { usePublicPinPolicy } from '@/lib/walkingPreference';
 
 export default function PlaylistDetailScreen() {
   const c = useThemeColors();
@@ -34,11 +36,24 @@ export default function PlaylistDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  // Walking mode scoped to this playlist's pins only. PlaylistPin has
-  // every field Pin has (plus `pos`), so structural typing lets us pass
-  // them straight through.
+  // When the user's policy is 'always', a playlist walk also picks up
+  // OTHER people's public pins along the way. We fetch the full pin
+  // set once on mount (only if the policy needs it) and merge in any
+  // public pins that aren't already in the playlist.
+  const policy = usePublicPinPolicy();
+  const [extraPublicPins, setExtraPublicPins] = useState<Pin[]>([]);
+
+  // PlaylistPin has every field Pin has (plus `pos`), so structural
+  // typing lets us mix the two arrays into a Pin[] for the hook.
+  const walkablePins = useMemo<Pin[]>(() => {
+    if (policy !== 'always' || extraPublicPins.length === 0) return pins;
+    const playlistIds = new Set(pins.map((p) => p.id));
+    const extras = extraPublicPins.filter((p) => !playlistIds.has(p.id));
+    return [...pins, ...extras];
+  }, [pins, extraPublicPins, policy]);
+
   const { walking, nowPlaying, message: walkingMsg, toggle: toggleWalking } =
-    useWalkingMode(pins);
+    useWalkingMode(walkablePins);
 
   const load = useCallback(async () => {
     try {
@@ -54,6 +69,28 @@ export default function PlaylistDetailScreen() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Lazy-load the full pin set only when needed (policy === 'always').
+  useEffect(() => {
+    if (policy !== 'always') {
+      setExtraPublicPins([]);
+      return;
+    }
+    let cancelled = false;
+    listPins()
+      .then((all) => {
+        if (cancelled) return;
+        // Only public pins from other users — your own already show
+        // up in your global walk and you don't want duplicates.
+        setExtraPublicPins(all.filter((p) => p.is_public && !p.is_mine));
+      })
+      .catch(() => {
+        if (!cancelled) setExtraPublicPins([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [policy]);
 
   const removePin = async (pinId: string) => {
     try {

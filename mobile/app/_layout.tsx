@@ -17,6 +17,7 @@ import {
   ThemePreferenceProvider,
   useResolvedScheme,
 } from '@/lib/themePreference';
+import { WalkingPreferenceProvider } from '@/lib/walkingPreference';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -57,7 +58,9 @@ function RootLayoutNav() {
   // (NavStack) reads the resolved scheme from context.
   return (
     <ThemePreferenceProvider>
-      <NavStack />
+      <WalkingPreferenceProvider>
+        <NavStack />
+      </WalkingPreferenceProvider>
     </ThemePreferenceProvider>
   );
 }
@@ -127,6 +130,10 @@ function NavStack() {
         <Stack.Screen
           name="pin-detail"
           options={{ presentation: 'modal', title: 'Pin' }}
+        />
+        <Stack.Screen
+          name="edit-pin"
+          options={{ presentation: 'modal', title: 'Edit pin' }}
         />
         <Stack.Screen
           name="playlist-detail"

@@ -24,3 +24,29 @@ export async function listPins(): Promise<Pin[]> {
   if (error) throw error;
   return (data ?? []) as Pin[];
 }
+
+/** Update an existing pin. Only the owner can edit; RLS enforces it.
+ *  Pass imageUrl='' (or null) to clear the user-uploaded photo. */
+export async function updatePin(opts: {
+  pinId: string;
+  latitude: number;
+  longitude: number;
+  placeName: string;
+  startSeconds: number;
+  durationSeconds: number;
+  isPublic: boolean;
+  /** Empty string or null to clear; otherwise the new public URL. */
+  imageUrl: string | null;
+}): Promise<void> {
+  const { error } = await supabase.rpc('update_pin', {
+    p_pin_id: opts.pinId,
+    p_latitude: opts.latitude,
+    p_longitude: opts.longitude,
+    p_place_name: opts.placeName,
+    p_start_seconds: opts.startSeconds,
+    p_duration_seconds: opts.durationSeconds,
+    p_is_public: opts.isPublic,
+    p_image_url: opts.imageUrl ?? '',
+  });
+  if (error) throw error;
+}
