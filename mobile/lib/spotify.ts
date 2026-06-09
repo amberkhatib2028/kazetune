@@ -46,6 +46,12 @@ async function spotifyFetch(path: string): Promise<any> {
   return res.json();
 }
 
+/** Fetch one track's metadata — used to recover the full track length
+ *  when editing a pin (pins don't store duration_ms). */
+export async function getTrack(id: string): Promise<SpotifyTrack> {
+  return (await spotifyFetch(`/tracks/${id}`)) as SpotifyTrack;
+}
+
 export async function searchTracks(query: string): Promise<SpotifyTrack[]> {
   if (!query.trim()) return [];
   // Omitting `limit` — Spotify defaults to 20. We had a "Invalid limit"

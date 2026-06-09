@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import * as Location from 'expo-location';
 
-import { stopPinClip } from './audio';
+import { stopPinClip } from './spotifyPlayback';
 import {
   GEOFENCE_EVENT_ENTER,
   GEOFENCE_EVENT_EXIT,
@@ -71,9 +71,9 @@ export function useWalkingMode(pins: Pin[]) {
       GEOFENCE_EVENT_ENTER,
       (pin: Pin) => {
         setNowPlaying(pin);
-        setMessage(
-          pin.preview_url ? null : `No preview audio for "${pin.track_name}"`,
-        );
+        // Playback resolves a preview from iTunes when the pin has none,
+        // so we no longer warn up front based on preview_url alone.
+        setMessage(null);
         // Add to collected list (deduped by id).
         if (!collectedRef.current.some((p) => p.id === pin.id)) {
           collectedRef.current = [...collectedRef.current, pin];

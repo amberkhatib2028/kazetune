@@ -4,7 +4,7 @@
 // underlying Spotify track is fixed (delete + recreate to change it).
 
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,9 +18,18 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 
+import ClipRangeSlider from '@/components/ClipRangeSlider';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { pickImage, uploadImage } from '@/lib/images';
 import { listPins, updatePin, type Pin } from '@/lib/pins';
+import { getTrack } from '@/lib/spotify';
+import {
+  PlaybackError,
+  playTrackSegment,
+  stopPinClip,
+} from '@/lib/spotifyPlayback';
+
+const MIN_CLIP_SEC = 20;
 
 export default function EditPinScreen() {
   const c = useThemeColors();
@@ -32,9 +41,20 @@ export default function EditPinScreen() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [placeName, setPlaceName] = useState('');
-  const [startSeconds, setStartSeconds] = useState('0');
-  const [durationSeconds, setDurationSeconds] = useState('20');
+  const [startSeconds, setStartSeconds] = useState(0);
+  const [durationSeconds, setDurationSeconds] = useState(20);
   const [isPublic, setIsPublic] = useState(false);
+
+  // Full track length — pins don't store it, so we fetch from Spotify to
+  // scope the clip slider. 0 until loaded (or if the fetch fails).
+  const [trackDurationSec, setTrackDurationSec] = useState(0);
+
+  // Clip-preview playback state (mirrors create-pin).
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewMsg, setPreviewMsg] = useState<string | null>(null);
+  const previewBlocked = useRef(false);
+  const previewStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Photo state. `existingImageUrl` is whatever was on the pin when
   // we loaded it. `localPhotoUri` is a freshly-picked local file (not
@@ -74,10 +94,19 @@ export default function EditPinScreen() {
       setLatitude(found.latitude.toString());
       setLongitude(found.longitude.toString());
       setPlaceName(found.place_name ?? '');
-      setStartSeconds(found.start_seconds.toString());
-      setDurationSeconds(found.duration_seconds.toString());
+      setStartSeconds(found.start_seconds);
+      setDurationSeconds(found.duration_seconds);
       setIsPublic(found.is_public);
       setExistingImageUrl(found.image_url);
+
+      // Recover the full track length for the clip slider. Best-effort:
+      // on failure we fall back to a length that at least fits the clip.
+      try {
+        const track = await getTrack(found.spotify_track_id);
+        setTrackDurationSec(Math.floor(track.duration_ms / 1000));
+      } catch {
+        setTrackDurationSec(found.start_seconds + found.duration_seconds);
+      }
     } finally {
       setLoading(false);
     }
@@ -86,6 +115,65 @@ export default function EditPinScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Stop any preview audio when leaving the screen.
+  useEffect(() => {
+    return () => {
+      if (previewStopTimer.current) clearTimeout(previewStopTimer.current);
+      stopPinClip().catch(() => {});
+    };
+  }, []);
+
+  const handlePreviewError = (e: unknown) => {
+    const reason = e instanceof PlaybackError ? e.reason : 'UNKNOWN';
+    previewBlocked.current = reason !== 'UNKNOWN';
+    if (reason === 'NO_DEVICE') {
+      setPreviewMsg('Open Spotify on your phone and play any song once, then tap Listen.');
+    } else if (reason === 'PREMIUM_REQUIRED') {
+      setPreviewMsg('Previewing the clip needs Spotify Premium.');
+    } else if (reason === 'EXPIRED' || reason === 'NO_TOKEN') {
+      setPreviewMsg('Spotify session expired — sign in again to preview.');
+    } else {
+      setPreviewMsg((e as any)?.message ?? 'Could not preview this clip.');
+    }
+  };
+
+  const playPreview = async () => {
+    if (!pin) return;
+    setPreviewMsg(null);
+    previewBlocked.current = false;
+    setPreviewLoading(true);
+    try {
+      await playTrackSegment(pin.spotify_track_id, startSeconds, durationSeconds);
+      setPreviewPlaying(true);
+      if (previewStopTimer.current) clearTimeout(previewStopTimer.current);
+      previewStopTimer.current = setTimeout(
+        () => setPreviewPlaying(false),
+        durationSeconds * 1000,
+      );
+    } catch (e) {
+      setPreviewPlaying(false);
+      handlePreviewError(e);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const stopPreview = async () => {
+    if (previewStopTimer.current) clearTimeout(previewStopTimer.current);
+    await stopPinClip();
+    setPreviewPlaying(false);
+  };
+
+  const togglePreview = () => {
+    if (previewPlaying) stopPreview();
+    else playPreview();
+  };
+
+  const onSliderRelease = () => {
+    if (previewBlocked.current) return;
+    playPreview();
+  };
 
   const choosePhoto = async () => {
     try {
@@ -129,23 +217,20 @@ export default function EditPinScreen() {
     if (!pin) return;
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
-    const start = parseInt(startSeconds, 10);
-    const dur = parseInt(durationSeconds, 10);
+    const start = Math.round(startSeconds);
+    const dur = Math.round(durationSeconds);
 
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       Alert.alert('Invalid location', 'Latitude and longitude must be numbers.');
       return;
     }
-    if (Number.isNaN(start) || start < 0) {
-      Alert.alert('Invalid start', 'Start seconds must be 0 or greater.');
-      return;
-    }
-    if (Number.isNaN(dur) || dur < 20) {
-      Alert.alert('Invalid duration', 'Clip must be at least 20 seconds.');
+    if (dur < MIN_CLIP_SEC) {
+      Alert.alert('Clip too short', `Clip must be at least ${MIN_CLIP_SEC} seconds.`);
       return;
     }
 
     try {
+      await stopPreview();
       setSaving(true);
 
       // Resolve final image_url:
@@ -314,37 +399,29 @@ export default function EditPinScreen() {
       />
 
       <Text style={styles.section}>Clip</Text>
-      <RNView style={styles.row}>
-        <RNView style={styles.col}>
-          <Text style={[styles.label, { color: c.textMuted }]}>
-            Start at (sec)
-          </Text>
-          <TextInput
-            style={inputStyle}
-            value={startSeconds}
-            onChangeText={setStartSeconds}
-            placeholder="0"
-            placeholderTextColor={c.placeholder}
-            keyboardType="number-pad"
-          />
-        </RNView>
-        <RNView style={styles.col}>
-          <Text style={[styles.label, { color: c.textMuted }]}>
-            Duration (sec)
-          </Text>
-          <TextInput
-            style={inputStyle}
-            value={durationSeconds}
-            onChangeText={setDurationSeconds}
-            placeholder="20"
-            placeholderTextColor={c.placeholder}
-            keyboardType="number-pad"
-          />
-        </RNView>
-      </RNView>
       <Text style={[styles.hint, { color: c.textSubtle }]}>
-        Clip must be at least 20 seconds.
+        Drag to choose the part of the song that plays here — at least{' '}
+        {MIN_CLIP_SEC}s.
       </Text>
+      {trackDurationSec > 0 && (
+        <ClipRangeSlider
+          totalSec={trackDurationSec}
+          startSec={startSeconds}
+          durationSec={durationSeconds}
+          minDurationSec={MIN_CLIP_SEC}
+          onChange={(s, d) => {
+            setStartSeconds(s);
+            setDurationSeconds(d);
+          }}
+          onPreview={onSliderRelease}
+          isPlaying={previewPlaying}
+          loadingPreview={previewLoading}
+          onTogglePlay={togglePreview}
+        />
+      )}
+      {previewMsg && (
+        <Text style={[styles.hint, { color: c.textMuted }]}>{previewMsg}</Text>
+      )}
 
       <RNView style={[styles.row, styles.publicRow]}>
         <Text style={[styles.label, { color: c.textMuted }]}>

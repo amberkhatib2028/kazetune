@@ -103,7 +103,6 @@ export default function NativeMapWeb() {
                 </Text>
                 <Text style={[styles.rowCoords, { color: c.textSubtle }]}>
                   {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
-                  {!item.preview_url && '  · (no preview)'}
                 </Text>
               </View>
               {item.is_mine && (

@@ -3,8 +3,8 @@
 // pin (only if it's yours). Loads the pin via listPins() and filters
 // by id rather than hitting a dedicated RPC; same RLS still applies.
 
-import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,7 +18,12 @@ import {
 } from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
-import { getCurrentPinId, playPinClip, stopPinClip } from '@/lib/audio';
+import {
+  PlaybackError,
+  getCurrentPinId,
+  playPinClip,
+  stopPinClip,
+} from '@/lib/spotifyPlayback';
 import { listPins, type Pin } from '@/lib/pins';
 import { supabase } from '@/lib/supabase';
 
@@ -30,6 +35,7 @@ export default function PinDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [loadingClip, setLoadingClip] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -41,12 +47,15 @@ export default function PinDetailScreen() {
     }
   }, [id]);
 
-  useEffect(() => {
-    load();
-    // Keep "playing" in sync if user closes and reopens while audio
-    // from a previous tap is still going.
-    setPlaying(getCurrentPinId() === id);
-  }, [load, id]);
+  // Reload every time the screen regains focus — not just on mount — so
+  // edits made on the edit-pin screen (e.g. a new clip start) are
+  // reflected when we pop back here. Also re-syncs the play/stop state.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+      setPlaying(getCurrentPinId() === id);
+    }, [load, id]),
+  );
 
   const togglePlay = async () => {
     if (!pin) return;
@@ -55,15 +64,36 @@ export default function PinDetailScreen() {
       setPlaying(false);
       return;
     }
-    if (!pin.preview_url) {
-      Alert.alert(
-        'No preview',
-        'Spotify did not return a preview URL for this track.',
-      );
-      return;
+    // playPinClip drives the user's Spotify (full track, seeked to the
+    // pin's start). It throws a PlaybackError with a reason when it
+    // can't — surface the right guidance for each case.
+    setLoadingClip(true);
+    try {
+      const ok = await playPinClip(pin);
+      setPlaying(ok);
+    } catch (e) {
+      const reason = e instanceof PlaybackError ? e.reason : 'UNKNOWN';
+      if (reason === 'NO_DEVICE') {
+        Alert.alert(
+          'Open Spotify first',
+          'Start Spotify on your phone and play (then pause) any song so it becomes the active device, then tap play here again.',
+        );
+      } else if (reason === 'PREMIUM_REQUIRED') {
+        Alert.alert(
+          'Spotify Premium required',
+          'Playing full tracks needs a Spotify Premium account.',
+        );
+      } else if (reason === 'EXPIRED' || reason === 'NO_TOKEN') {
+        Alert.alert(
+          'Spotify session expired',
+          'Sign out and sign back in with Spotify to keep playing.',
+        );
+      } else {
+        Alert.alert('Could not play', (e as any)?.message ?? String(e));
+      }
+    } finally {
+      setLoadingClip(false);
     }
-    const ok = await playPinClip(pin);
-    setPlaying(ok);
   };
 
   const togglePublic = async () => {
@@ -189,25 +219,24 @@ export default function PinDetailScreen() {
         <Text style={styles.value}>
           Starts at {pin.start_seconds}s · {pin.duration_seconds}s long
         </Text>
-        {!pin.preview_url && (
-          <Text style={[styles.muted, { color: c.textSubtle }]}>
-            Spotify doesn't have a preview for this track — playback won't work.
-          </Text>
-        )}
       </View>
 
       <Pressable
         style={[
           styles.playButton,
           { backgroundColor: c.primary },
-          !pin.preview_url && styles.disabled,
+          loadingClip && styles.disabled,
         ]}
         onPress={togglePlay}
-        disabled={!pin.preview_url}
+        disabled={loadingClip}
       >
-        <Text style={[styles.playButtonText, { color: c.primaryText }]}>
-          {playing ? '■ Stop' : '▶ Play clip'}
-        </Text>
+        {loadingClip ? (
+          <ActivityIndicator color={c.primaryText} />
+        ) : (
+          <Text style={[styles.playButtonText, { color: c.primaryText }]}>
+            {playing ? '■ Stop' : '▶ Play clip'}
+          </Text>
+        )}
       </Pressable>
 
       <Pressable

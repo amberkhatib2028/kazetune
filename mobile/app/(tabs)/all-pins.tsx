@@ -183,7 +183,6 @@ export default function AllPinsScreen() {
                 </Text>
                 <Text style={[styles.rowMeta, { color: c.textSubtle }]}>
                   {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
-                  {!item.preview_url && '  ·  no preview'}
                 </Text>
               </RNView>
               <RNView style={styles.badges}>

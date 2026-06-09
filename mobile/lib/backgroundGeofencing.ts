@@ -2,10 +2,10 @@
 // keep firing even when the app is backgrounded or the phone is locked.
 //
 // The OS wakes the app when the user enters a region, invokes the
-// TaskManager task we register below, and our handler plays the
-// matching pin's clip. Audio is configured for background playback in
-// lib/audio.ts (shouldPlayInBackground + the expo-audio plugin's
-// enableBackgroundPlayback flag).
+// TaskManager task we register below, and our handler tells Spotify to
+// play the matching pin's clip (see lib/spotifyPlayback.ts). Audio is
+// produced by the user's Spotify app over Spotify Connect, so it keeps
+// playing in the background without us holding an audio session.
 //
 // Constraints / quirks:
 //   • iOS limits an app to **20 simultaneous geofences**. We pick the
@@ -23,7 +23,7 @@ import { DeviceEventEmitter } from 'react-native';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import { playPinClip, stopPinClip } from './audio';
+import { playPinClip, stopPinClip } from './spotifyPlayback';
 import type { Pin } from './pins';
 
 export const GEOFENCE_TASK_NAME = 'kazetune-walking-geofence';
@@ -33,7 +33,7 @@ const PIN_CACHE_KEY = 'kazetune:walking:pinCache';
 // the JSON in AsyncStorage stays small.
 type CachedPin = {
   id: string;
-  preview_url: string | null;
+  spotify_track_id: string;
   track_name: string;
   artist_name: string;
   place_name: string | null;
@@ -110,7 +110,7 @@ function distanceMeters(
 function toCached(pin: Pin): CachedPin {
   return {
     id: pin.id,
-    preview_url: pin.preview_url,
+    spotify_track_id: pin.spotify_track_id,
     track_name: pin.track_name,
     artist_name: pin.artist_name,
     place_name: pin.place_name,
