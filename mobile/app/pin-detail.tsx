@@ -3,6 +3,7 @@
 // pin (only if it's yours). Loads the pin via listPins() and filters
 // by id rather than hitting a dedicated RPC; same RLS still applies.
 
+import * as Linking from 'expo-linking';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -12,6 +13,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   View as RNView,
@@ -93,6 +95,24 @@ export default function PinDetailScreen() {
       }
     } finally {
       setLoadingClip(false);
+    }
+  };
+
+  const onShare = async () => {
+    if (!pin) return;
+    // Deep link back into this exact pin. expo-linking builds a URL with
+    // the app's scheme (kazetune://pin-detail?id=…) so tapping it opens
+    // the app straight to this screen. Recipients can only open it if the
+    // pin is visible to them — RLS keeps private pins private.
+    const url = Linking.createURL('/pin-detail', { queryParams: { id: pin.id } });
+    const where = pin.place_name ? ` at ${pin.place_name}` : '';
+    try {
+      await Share.share({
+        message: `🎵 "${pin.track_name}" by ${pin.artist_name}${where} on KazeTune\n${url}`,
+        url,
+      });
+    } catch {
+      // User dismissed the share sheet, or it failed — nothing to do.
     }
   };
 
@@ -214,6 +234,13 @@ export default function PinDetailScreen() {
         </Text>
       </View>
 
+      {pin.description ? (
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: c.textMuted }]}>Why here</Text>
+          <Text style={[styles.note, { color: c.text }]}>{pin.description}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.section}>
         <Text style={[styles.label, { color: c.textMuted }]}>Clip</Text>
         <Text style={styles.value}>
@@ -252,6 +279,21 @@ export default function PinDetailScreen() {
           + Add to playlist
         </Text>
       </Pressable>
+
+      <Pressable
+        style={[styles.secondaryButton, { backgroundColor: c.secondaryButton }]}
+        onPress={onShare}
+      >
+        <Text style={[styles.secondaryButtonText, { color: c.text }]}>
+          ↗ Share pin
+        </Text>
+      </Pressable>
+
+      {pin.is_mine && !pin.is_public && (
+        <Text style={[styles.shareHint, { color: c.textSubtle }]}>
+          This pin is private — make it public below so others can open your link.
+        </Text>
+      )}
 
       {pin.is_mine && (
         <>
@@ -323,6 +365,8 @@ const styles = StyleSheet.create({
   section: { width: '100%', marginTop: 24, gap: 4 },
   label: { fontSize: 11, textTransform: 'uppercase' },
   value: { fontSize: 16, fontWeight: '500' },
+  note: { fontSize: 16, lineHeight: 22, marginTop: 2 },
+  shareHint: { fontSize: 12, marginTop: -4, marginBottom: 4 },
   coords: { fontSize: 12, fontFamily: 'SpaceMono' },
   muted: { fontSize: 12, marginTop: 4 },
 

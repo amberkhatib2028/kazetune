@@ -49,6 +49,7 @@ export default function CreatePinScreen() {
   const [latitude, setLatitude] = useState(params.latitude ?? '');
   const [longitude, setLongitude] = useState(params.longitude ?? '');
   const [placeName, setPlaceName] = useState('');
+  const [description, setDescription] = useState('');
   const [startSeconds, setStartSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(
     trackDurationSec > 0 ? Math.min(MIN_CLIP_SEC, trackDurationSec) : MIN_CLIP_SEC,
@@ -200,6 +201,7 @@ export default function CreatePinScreen() {
         p_preview_url: params.previewUrl ?? '',
         p_album_image_url: params.albumImageUrl ?? '',
         p_image_url: uploadedUrl ?? '',
+        p_description: description.trim(),
       });
 
       if (error) throw error;
@@ -328,6 +330,17 @@ export default function CreatePinScreen() {
         placeholderTextColor={c.placeholder}
       />
 
+      <Text style={styles.section}>Why here? (optional)</Text>
+      <TextInput
+        style={[inputStyle, styles.noteInput]}
+        value={description}
+        onChangeText={setDescription}
+        placeholder="What makes this song belong at this spot?"
+        placeholderTextColor={c.placeholder}
+        multiline
+        maxLength={500}
+      />
+
       <Text style={styles.section}>Clip</Text>
       <Text style={[styles.hint, { color: c.textSubtle }]}>
         Drag to choose the part of the song that plays here — at least{' '}
@@ -413,6 +426,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   hint: { fontSize: 12, marginTop: 4 },
+  noteInput: { minHeight: 80, paddingTop: 10, textAlignVertical: 'top' },
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
   publicRow: { alignItems: 'center', justifyContent: 'space-between', marginTop: 16 },

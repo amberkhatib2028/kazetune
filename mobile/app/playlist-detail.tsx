@@ -11,6 +11,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Switch,
   View as RNView,
 } from 'react-native';
 
@@ -36,24 +37,33 @@ export default function PlaylistDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
-  // When the user's policy is 'always', a playlist walk also picks up
-  // OTHER people's public pins along the way. We fetch the full pin
-  // set once on mount (only if the policy needs it) and merge in any
-  // public pins that aren't already in the playlist.
+  // A playlist walk can ALSO pick up other people's public pins along
+  // the way. This is now a per-walk choice (`includePublic`), seeded
+  // from the global default in Settings — so you can run one playlist in
+  // focused mode and another in discovery mode without changing Settings.
   const policy = usePublicPinPolicy();
+  const [includePublic, setIncludePublic] = useState(policy === 'always');
   const [extraPublicPins, setExtraPublicPins] = useState<Pin[]>([]);
 
   // PlaylistPin has every field Pin has (plus `pos`), so structural
   // typing lets us mix the two arrays into a Pin[] for the hook.
   const walkablePins = useMemo<Pin[]>(() => {
-    if (policy !== 'always' || extraPublicPins.length === 0) return pins;
+    if (!includePublic || extraPublicPins.length === 0) return pins;
     const playlistIds = new Set(pins.map((p) => p.id));
     const extras = extraPublicPins.filter((p) => !playlistIds.has(p.id));
     return [...pins, ...extras];
-  }, [pins, extraPublicPins, policy]);
+  }, [pins, extraPublicPins, includePublic]);
 
   const { walking, nowPlaying, message: walkingMsg, toggle: toggleWalking } =
     useWalkingMode(walkablePins);
+
+  // Keep the toggle synced to the global default until a walk starts —
+  // mainly to pick up the persisted policy if it loads after mount. The
+  // !walking guard means we never change it mid-walk.
+  useEffect(() => {
+    if (!walking) setIncludePublic(policy === 'always');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [policy]);
 
   const load = useCallback(async () => {
     try {
@@ -70,9 +80,9 @@ export default function PlaylistDetailScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Lazy-load the full pin set only when needed (policy === 'always').
+  // Lazy-load the full pin set only when this walk includes public pins.
   useEffect(() => {
-    if (policy !== 'always') {
+    if (!includePublic) {
       setExtraPublicPins([]);
       return;
     }
@@ -90,7 +100,7 @@ export default function PlaylistDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [policy]);
+  }, [includePublic]);
 
   const removePin = async (pinId: string) => {
     try {
@@ -177,6 +187,21 @@ export default function PlaylistDetailScreen() {
           <Text style={[styles.desc, { color: c.textMuted }]}>
             {playlist.description}
           </Text>
+        )}
+        {pins.length > 0 && (
+          <RNView style={[styles.toggleRow, { backgroundColor: c.card }]}>
+            <RNView style={styles.toggleText}>
+              <Text style={styles.toggleTitle}>Pick up public pins</Text>
+              <Text style={[styles.toggleSub, { color: c.textMuted }]}>
+                Also play nearby public pins from others on this walk.
+              </Text>
+            </RNView>
+            <Switch
+              value={includePublic}
+              onValueChange={setIncludePublic}
+              disabled={walking}
+            />
+          </RNView>
         )}
         <Pressable
           style={[
@@ -379,6 +404,17 @@ const styles = StyleSheet.create({
   deleteBtnText: { fontWeight: '700' },
   disabled: { opacity: 0.5 },
 
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+  },
+  toggleText: { flex: 1, gap: 2 },
+  toggleTitle: { fontSize: 15, fontWeight: '600' },
+  toggleSub: { fontSize: 12 },
   walkBtn: {
     marginTop: 12,
     paddingVertical: 12,

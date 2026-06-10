@@ -62,17 +62,25 @@ supabase/               SQL — schema, RPCs, migrations, storage setup
 
 ### 1. Set up the backend (Supabase)
 
-In the Supabase dashboard → **SQL Editor**, run the files in `supabase/` in this
-order (everything is idempotent, so re-running is safe):
+All schema, RPCs, and migrations live in `supabase/` and are idempotent. Apply
+them to your database with one command:
 
-1. `schema.sql` — tables, RLS policies, the new-user trigger
-2. Base RPCs: `create_pin_rpc.sql`, `list_pins_rpc.sql`, `update_pin_rpc.sql`,
-   `playlist_rpcs.sql`, `friend_rpcs.sql`, `friend_activity_rpc.sql`
-3. `storage_bucket_setup.sql` — image storage buckets + policies
-4. Migrations, in order (each file’s header notes its dependencies):
-   `preview_url_migration.sql` → `album_image_url_migration.sql` →
-   `user_images_migration.sql` → `username_migration.sql` →
-   `pin_description_migration.sql`
+```bash
+cd mobile
+npm run db:push
+```
+
+This requires a Postgres connection string. Get it from Supabase → **Project
+Settings → Database → Connection string → URI** (use the Session pooler /
+direct connection — it supports DDL), and add it to `mobile/.env.local`:
+
+```
+SUPABASE_DB_URL=postgresql://postgres.<ref>:<password>@<host>:5432/postgres
+```
+
+`db:push` runs every file in dependency order ([scripts/db-push.mjs](mobile/scripts/db-push.mjs)),
+so it’s safe to re-run any time you add a migration. (You can still paste files
+into the Supabase SQL Editor by hand if you prefer.)
 
 Then enable Spotify auth: **Authentication → Providers → Spotify**, add your
 Spotify app’s Client ID/Secret, and add `kazetune://` as an allowed redirect URL.

@@ -72,6 +72,9 @@ function NavStack() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  // null = not yet checked for the current user. Once true we stop
+  // re-checking; we only keep polling while a user still has no handle.
+  const [hasUsername, setHasUsername] = useState<boolean | null>(null);
 
   // Load any existing session on mount and subscribe to future changes
   // (login, logout, token refresh).
@@ -88,17 +91,54 @@ function NavStack() {
     };
   }, []);
 
-  // Auth gate: keep unauthenticated users on /login, send them onward
-  // once a session shows up.
+  // Reset the username check whenever the signed-in user changes.
+  useEffect(() => {
+    setHasUsername(null);
+  }, [session?.user?.id]);
+
+  // Auth + username gate:
+  //   • no session            → /login
+  //   • signed in, no handle   → /choose-username (required once)
+  //   • signed in, has handle  → into the app
   useEffect(() => {
     if (!authReady) return;
-    const onLoginScreen = segments[0] === 'login';
-    if (!session && !onLoginScreen) {
-      router.replace('/login');
-    } else if (session && onLoginScreen) {
-      router.replace('/(tabs)');
+    const onLogin = segments[0] === 'login';
+    const onChoose = segments[0] === 'choose-username';
+
+    if (!session) {
+      if (!onLogin) router.replace('/login');
+      return;
     }
-  }, [authReady, session, segments, router]);
+
+    if (hasUsername === true) {
+      if (onLogin || onChoose) router.replace('/(tabs)');
+      return;
+    }
+
+    // Username unknown or missing — check the profile. (Only runs until
+    // a handle exists, so it's not a per-navigation cost for most users.)
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data, error }) => {
+        // On a transient fetch error, leave the check unresolved so we
+        // retry rather than wrongly gating a user who already has a handle.
+        if (cancelled || error) return;
+        const has = !!data?.username;
+        setHasUsername(has);
+        if (!has) {
+          if (!onChoose) router.replace('/choose-username');
+        } else if (onLogin || onChoose) {
+          router.replace('/(tabs)');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, session, hasUsername, segments, router]);
 
   // First-launch onboarding: pop the "How it works" modal once after
   // the user is signed in and on the tabs. We check exactly once per
@@ -107,7 +147,8 @@ function NavStack() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   useEffect(() => {
     if (!authReady || !session || onboardingChecked) return;
-    if (segments[0] === 'login') return; // wait until past the auth gate
+    // Wait until past the auth + username gates before stacking the modal.
+    if (segments[0] === 'login' || segments[0] === 'choose-username') return;
     setOnboardingChecked(true);
     (async () => {
       if (await isOnboardingShown()) return;
@@ -123,6 +164,7 @@ function NavStack() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="choose-username" options={{ headerShown: false }} />
         <Stack.Screen
           name="create-pin"
           options={{ presentation: 'modal', title: 'New pin' }}

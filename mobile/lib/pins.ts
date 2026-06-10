@@ -21,6 +21,8 @@ export type Pin = {
   preview_url: string | null;
   album_image_url: string | null;
   image_url: string | null;
+  /** Free-text note — the "why" behind the pin. */
+  description: string | null;
 };
 
 export async function listPins(): Promise<Pin[]> {
@@ -41,6 +43,8 @@ export async function updatePin(opts: {
   isPublic: boolean;
   /** Empty string or null to clear; otherwise the new public URL. */
   imageUrl: string | null;
+  /** Free-text note; '' clears it. */
+  description: string;
 }): Promise<void> {
   const { error } = await supabase.rpc('update_pin', {
     p_pin_id: opts.pinId,
@@ -51,6 +55,7 @@ export async function updatePin(opts: {
     p_duration_seconds: opts.durationSeconds,
     p_is_public: opts.isPublic,
     p_image_url: opts.imageUrl ?? '',
+    p_description: opts.description,
   });
   if (error) throw error;
 }

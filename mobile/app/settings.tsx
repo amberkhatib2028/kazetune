@@ -244,7 +244,8 @@ export default function SettingsScreen() {
                   Include public during playlist walks
                 </Text>
                 <Text style={[styles.rowHint, { color: c.textMuted }]}>
-                  Pick up nearby public pins while walking a playlist too.
+                  Default for playlist walks — you can flip it per walk when
+                  you tap "Walk this playlist".
                 </Text>
               </RNView>
               <RNView
@@ -276,7 +277,8 @@ export default function SettingsScreen() {
                   Only when not walking a playlist
                 </Text>
                 <Text style={[styles.rowHint, { color: c.textMuted }]}>
-                  Playlist walks stay focused on the playlist's own pins.
+                  Default: playlist walks stay focused on their own pins
+                  (still changeable per walk).
                 </Text>
               </RNView>
               <RNView
