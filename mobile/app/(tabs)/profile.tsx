@@ -16,6 +16,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { Avatar } from '@/components/Avatar';
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { signOut as accountSignOut } from '@/lib/account';
 import { pickImage, uploadImage } from '@/lib/images';
 import { supabase } from '@/lib/supabase';
 
@@ -80,8 +81,19 @@ export default function ProfileScreen() {
     }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
+    Alert.alert('Sign out?', 'You can sign back in with Spotify anytime.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => {
+          accountSignOut().catch((e) =>
+            Alert.alert('Sign out failed', String(e)),
+          );
+        },
+      },
+    ]);
   };
 
   if (loading) {

@@ -279,9 +279,12 @@ export default function EditPinScreen() {
   //   - new local URI takes priority
   //   - else existing remote URL (unless the user asked to remove it)
   //   - else nothing (Add a photo prompt)
-  const photoPreviewUri =
+  // The user's own photo (freshly picked or previously uploaded), if any.
+  const userPhotoUri =
     localPhotoUri ??
     (!removeExistingPhoto && existingImageUrl ? existingImageUrl : null);
+  // What to actually show: the user's photo, else the album cover default.
+  const photoPreviewUri = userPhotoUri ?? pin.album_image_url;
 
   const inputStyle = [
     styles.input,
@@ -320,7 +323,10 @@ export default function EditPinScreen() {
         </RNView>
       </RNView>
 
-      <Text style={styles.section}>Photo (optional)</Text>
+      <Text style={styles.section}>Photo</Text>
+      <Text style={[styles.hint, { color: c.textSubtle }]}>
+        Defaults to the album cover — tap to use your own.
+      </Text>
       <Pressable
         style={[
           styles.photoBox,
@@ -338,10 +344,10 @@ export default function EditPinScreen() {
           </Text>
         )}
       </Pressable>
-      {photoPreviewUri && (
+      {userPhotoUri && (
         <Pressable onPress={removePhoto} hitSlop={8}>
           <Text style={[styles.photoClear, { color: c.textMuted }]}>
-            Remove photo
+            Remove photo (use album cover)
           </Text>
         </Pressable>
       )}

@@ -249,7 +249,10 @@ export default function CreatePinScreen() {
         </View>
       </View>
 
-      <Text style={styles.section}>Photo (optional)</Text>
+      <Text style={styles.section}>Photo</Text>
+      <Text style={[styles.hint, { color: c.textSubtle }]}>
+        Defaults to the album cover — tap to use your own.
+      </Text>
       <Pressable
         style={[
           styles.photoBox,
@@ -261,6 +264,8 @@ export default function CreatePinScreen() {
       >
         {localPhotoUri ? (
           <Image source={{ uri: localPhotoUri }} style={styles.photoPreview} />
+        ) : params.albumImageUrl ? (
+          <Image source={{ uri: params.albumImageUrl }} style={styles.photoPreview} />
         ) : (
           <Text style={[styles.photoHint, { color: c.textMuted }]}>
             {pickingPhoto ? 'Opening…' : '+ Add a photo'}
@@ -270,7 +275,7 @@ export default function CreatePinScreen() {
       {localPhotoUri && (
         <Pressable onPress={() => setLocalPhotoUri(null)} hitSlop={8}>
           <Text style={[styles.photoClear, { color: c.textMuted }]}>
-            Remove photo
+            Remove photo (use album cover)
           </Text>
         </Pressable>
       )}

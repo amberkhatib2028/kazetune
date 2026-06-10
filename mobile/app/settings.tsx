@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { deleteAccount, signOut, updateDisplayName } from '@/lib/account';
 import { setUsername } from '@/lib/friends';
 import { resetOnboarding } from '@/lib/onboarding';
 import { supabase } from '@/lib/supabase';
@@ -43,11 +44,16 @@ export default function SettingsScreen() {
   const { policy, setPolicy } = useWalkingPreference();
   const pickUpPublic = policy !== 'never';
 
-  // --- Username state ----------------------------------------------
+  // --- Account state -----------------------------------------------
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const [editingUsername, setEditingUsername] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
+
+  const [currentName, setCurrentName] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   // Load on mount.
   useEffect(() => {
@@ -57,15 +63,86 @@ export default function SettingsScreen() {
       if (!sessionData.session) return;
       const { data } = await supabase
         .from('profiles')
-        .select('username')
+        .select('username, display_name')
         .eq('id', sessionData.session.user.id)
         .single();
-      if (!cancelled && data) setCurrentUsername(data.username);
+      if (!cancelled && data) {
+        setCurrentUsername(data.username);
+        setCurrentName(data.display_name);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  const startEditingName = () => {
+    setNameDraft(currentName ?? '');
+    setEditingName(true);
+  };
+
+  const saveDisplayName = async () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed || trimmed === (currentName ?? '')) {
+      setEditingName(false);
+      return;
+    }
+    try {
+      setSavingName(true);
+      await updateDisplayName(trimmed);
+      setCurrentName(trimmed);
+      setEditingName(false);
+    } catch (e: any) {
+      Alert.alert('Could not save name', e?.message ?? String(e));
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const confirmSignOut = () => {
+    Alert.alert('Sign out?', 'You can sign back in with Spotify anytime.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => {
+          // Auth gate sends us back to /login once the session clears.
+          signOut().catch((e) => Alert.alert('Sign out failed', String(e)));
+        },
+      },
+    ]);
+  };
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your account and all your pins, playlists, and friends. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert(
+              'Are you absolutely sure?',
+              'There is no way to recover your account after this.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete forever',
+                  style: 'destructive',
+                  onPress: () => {
+                    deleteAccount().catch((e: any) =>
+                      Alert.alert('Could not delete account', e?.message ?? String(e)),
+                    );
+                  },
+                },
+              ],
+            ),
+        },
+      ],
+    );
+  };
 
   const startEditingUsername = () => {
     setUsernameDraft(currentUsername ?? '');
@@ -105,6 +182,60 @@ export default function SettingsScreen() {
         Account
       </Text>
       <View style={[styles.group, { backgroundColor: c.card }]}>
+        {editingName ? (
+          <RNView
+            style={[
+              styles.row,
+              styles.rowDivider,
+              { borderBottomColor: c.separator, gap: 8 },
+            ]}
+          >
+            <TextInput
+              style={[
+                styles.usernameInput,
+                {
+                  color: c.inputText,
+                  backgroundColor: c.inputBackground,
+                  borderColor: c.border,
+                },
+              ]}
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              placeholder="Your name"
+              placeholderTextColor={c.placeholder}
+              maxLength={50}
+              editable={!savingName}
+            />
+            {savingName ? (
+              <ActivityIndicator color={c.text} />
+            ) : (
+              <>
+                <Pressable onPress={() => setEditingName(false)} hitSlop={8}>
+                  <Text style={[styles.linkBtn, { color: c.textMuted }]}>
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable onPress={saveDisplayName} hitSlop={8}>
+                  <Text style={[styles.linkBtn, { color: c.primary }]}>Save</Text>
+                </Pressable>
+              </>
+            )}
+          </RNView>
+        ) : (
+          <Pressable
+            style={[styles.row, styles.rowDivider, { borderBottomColor: c.separator }]}
+            onPress={startEditingName}
+          >
+            <RNView style={styles.rowText}>
+              <Text style={styles.rowTitle}>Display name</Text>
+              <Text style={[styles.rowHint, { color: c.textMuted }]}>
+                {currentName ?? 'Set a display name'}
+              </Text>
+            </RNView>
+            <Text style={[styles.linkBtn, { color: c.primary }]}>Change</Text>
+          </Pressable>
+        )}
+
         {editingUsername ? (
           <RNView style={[styles.row, { gap: 8 }]}>
             <Text style={[styles.atSign, { color: c.textMuted }]}>@</Text>
@@ -342,6 +473,29 @@ export default function SettingsScreen() {
           </RNView>
         </Pressable>
       </View>
+
+      {/* ---- Account actions --------------------------------------- */}
+      <View style={[styles.group, { backgroundColor: c.card, marginTop: 32 }]}>
+        <Pressable style={styles.row} onPress={confirmSignOut}>
+          <Text style={[styles.rowTitle, { color: c.primary }]}>Sign out</Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.row,
+            { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.separator },
+          ]}
+          onPress={confirmDeleteAccount}
+        >
+          <RNView style={styles.rowText}>
+            <Text style={[styles.rowTitle, { color: c.danger }]}>
+              Delete account
+            </Text>
+            <Text style={[styles.rowHint, { color: c.textMuted }]}>
+              Permanently remove your account and all your data.
+            </Text>
+          </RNView>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -368,6 +522,7 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   rowTitle: { fontSize: 16, fontWeight: '600' },
   rowHint: { fontSize: 12 },
+  rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth },
   radioOuter: {
     width: 22,
     height: 22,
