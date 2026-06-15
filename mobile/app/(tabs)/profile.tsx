@@ -174,10 +174,13 @@ export default function ProfileScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.button, { backgroundColor: c.walkingActive }]}
+          style={[
+            styles.button,
+            { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.border },
+          ]}
           onPress={signOut}
         >
-          <Text style={[styles.buttonText, { color: '#fff' }]}>Sign out</Text>
+          <Text style={[styles.buttonText, { color: c.danger }]}>Sign out</Text>
         </Pressable>
       </View>
     </ScrollView>
