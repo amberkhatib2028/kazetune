@@ -38,6 +38,7 @@ type Props = {
   startSec: number;
   durationSec: number;
   minDurationSec?: number;
+  maxDurationSec?: number;
   /** Fired continuously while dragging — keep the parent's state in sync. */
   onChange: (startSec: number, durationSec: number) => void;
   /** Fired once on release — a good moment to play the chosen segment. */
@@ -53,6 +54,7 @@ export default function ClipRangeSlider({
   startSec,
   durationSec,
   minDurationSec = 20,
+  maxDurationSec,
   onChange,
   onPreview,
   isPlaying,
@@ -66,6 +68,7 @@ export default function ClipRangeSlider({
   // min exceed what's available.
   const total = Math.max(totalSec, 1);
   const minDur = Math.min(minDurationSec, total);
+  const maxDur = Math.min(maxDurationSec ?? total, total);
 
   // Decorative, stable waveform heights (0.25–1.0).
   const waveHeights = useMemo(
@@ -82,6 +85,8 @@ export default function ClipRangeSlider({
   totalRef.current = total;
   const minRef = useRef(minDur);
   minRef.current = minDur;
+  const maxRef = useRef(maxDur);
+  maxRef.current = maxDur;
   const valsRef = useRef({ start: startSec, duration: durationSec });
   valsRef.current = { start: startSec, duration: durationSec };
   const cbRef = useRef({ onChange, onPreview });
@@ -125,7 +130,11 @@ export default function ClipRangeSlider({
   const leftPan = useRef(
     makeResponder((dSec, g0) => {
       const end = g0.start + g0.duration; // hold the end fixed
-      const start = Math.max(0, Math.min(g0.start + dSec, end - minRef.current));
+      // Clamp start so the clip is between min and max seconds long.
+      const start = Math.max(
+        0,
+        Math.max(end - maxRef.current, Math.min(g0.start + dSec, end - minRef.current)),
+      );
       return { start, duration: end - start };
     }),
   ).current;
@@ -133,9 +142,10 @@ export default function ClipRangeSlider({
   const rightPan = useRef(
     makeResponder((dSec, g0) => {
       const t = totalRef.current;
-      const end = Math.max(
-        g0.start + minRef.current,
-        Math.min(g0.start + g0.duration + dSec, t),
+      // Clamp end so the clip is between min and max seconds long.
+      const end = Math.min(
+        g0.start + maxRef.current,
+        Math.max(g0.start + minRef.current, Math.min(g0.start + g0.duration + dSec, t)),
       );
       return { start: g0.start, duration: end - g0.start };
     }),
