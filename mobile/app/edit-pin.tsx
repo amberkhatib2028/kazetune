@@ -15,9 +15,9 @@ import {
   TextInput,
   View as RNView,
 } from 'react-native';
-import * as Location from 'expo-location';
 
 import ClipRangeSlider from '@/components/ClipRangeSlider';
+import { PinLocationMap } from '@/components/PinLocationMap';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { VisibilitySelector } from '@/components/VisibilitySelector';
 import { pickImage, uploadImage } from '@/lib/images';
@@ -71,7 +71,6 @@ export default function EditPinScreen() {
   const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
 
   const [saving, setSaving] = useState(false);
-  const [locating, setLocating] = useState(false);
   const [pickingPhoto, setPickingPhoto] = useState(false);
 
   // Load the pin via list_pins (consistent with pin-detail.tsx — same
@@ -195,24 +194,6 @@ export default function EditPinScreen() {
   const removePhoto = () => {
     setLocalPhotoUri(null);
     setRemoveExistingPhoto(true);
-  };
-
-  const useCurrentLocation = async () => {
-    try {
-      setLocating(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required.');
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({});
-      setLatitude(loc.coords.latitude.toString());
-      setLongitude(loc.coords.longitude.toString());
-    } catch (e: any) {
-      Alert.alert('Could not get location', e?.message ?? String(e));
-    } finally {
-      setLocating(false);
-    }
   };
 
   const save = async () => {
@@ -353,48 +334,14 @@ export default function EditPinScreen() {
       )}
 
       <Text style={styles.section}>Location</Text>
-      <Pressable
-        style={[
-          styles.locButton,
-          { backgroundColor: c.walkingActive },
-          locating && styles.disabled,
-        ]}
-        onPress={useCurrentLocation}
-        disabled={locating}
-      >
-        {locating ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={[styles.locButtonText, { color: '#fff' }]}>
-            Use my location
-          </Text>
-        )}
-      </Pressable>
-
-      <RNView style={styles.row}>
-        <RNView style={styles.col}>
-          <Text style={[styles.label, { color: c.textMuted }]}>Latitude</Text>
-          <TextInput
-            style={inputStyle}
-            value={latitude}
-            onChangeText={setLatitude}
-            placeholder="40.34942"
-            placeholderTextColor={c.placeholder}
-            keyboardType="numeric"
-          />
-        </RNView>
-        <RNView style={styles.col}>
-          <Text style={[styles.label, { color: c.textMuted }]}>Longitude</Text>
-          <TextInput
-            style={inputStyle}
-            value={longitude}
-            onChangeText={setLongitude}
-            placeholder="-74.65691"
-            placeholderTextColor={c.placeholder}
-            keyboardType="numeric"
-          />
-        </RNView>
-      </RNView>
+      <PinLocationMap
+        initialLat={parseFloat(latitude)}
+        initialLng={parseFloat(longitude)}
+        onChange={(lat, lng) => {
+          setLatitude(lat.toString());
+          setLongitude(lng.toString());
+        }}
+      />
 
       <Text style={[styles.label, { color: c.textMuted }]}>
         Place name (optional)
@@ -403,7 +350,7 @@ export default function EditPinScreen() {
         style={inputStyle}
         value={placeName}
         onChangeText={setPlaceName}
-        placeholder="e.g. Firestone Library"
+        placeholder="Defaults to the nearest place"
         placeholderTextColor={c.placeholder}
       />
 
