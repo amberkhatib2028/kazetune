@@ -11,12 +11,12 @@ const light = {
   text: '#3A2A33', // warm plum-charcoal — softer than pure black
   textMuted: 'rgba(58,42,51,0.55)',
   textSubtle: 'rgba(58,42,51,0.40)',
-  background: '#FFF6F0', // warm cream
-  card: '#FFFFFF',
-  cardHighlight: 'rgba(255,111,145,0.14)',
-  border: 'rgba(58,42,51,0.10)',
-  separator: 'rgba(58,42,51,0.07)',
-  inputBackground: '#FFFFFF',
+  background: '#F5E5D7', // warm cream page (clearly cream, not white)
+  card: '#FCEFE7', // slightly lighter warm cream panel — never stark white
+  cardHighlight: 'rgba(255,111,145,0.16)',
+  border: 'rgba(58,42,51,0.12)',
+  separator: 'rgba(58,42,51,0.08)',
+  inputBackground: '#FCEFE7',
   inputText: '#3A2A33',
   placeholder: 'rgba(58,42,51,0.35)',
   primary: '#FF6F91', // sunset pink-coral
