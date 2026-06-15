@@ -18,6 +18,7 @@ import {
   View as RNView,
 } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { ClipPreview } from '@/components/ClipPreview';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { VisibilitySelector } from '@/components/VisibilitySelector';
@@ -43,6 +44,13 @@ export default function PinDetailScreen() {
   // Full track length (pins don't store it) so we can show where the clip
   // sits. 0 until loaded / if the fetch fails.
   const [trackDurationSec, setTrackDurationSec] = useState(0);
+  // Owner profile, loaded only for pins that aren't yours (to show
+  // "Pinned by …").
+  const [owner, setOwner] = useState<{
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -53,6 +61,16 @@ export default function PinDetailScreen() {
         getTrack(found.spotify_track_id)
           .then((t) => setTrackDurationSec(Math.floor(t.duration_ms / 1000)))
           .catch(() => setTrackDurationSec(0));
+      }
+      if (found && !found.is_mine && found.user_id) {
+        supabase
+          .from('profiles')
+          .select('display_name, username, avatar_url')
+          .eq('id', found.user_id)
+          .single()
+          .then(({ data }) => setOwner((data as typeof owner) ?? null));
+      } else {
+        setOwner(null);
       }
     } finally {
       setLoading(false);
@@ -236,6 +254,22 @@ export default function PinDetailScreen() {
         {pin.artist_name}
       </Text>
 
+      {!pin.is_mine && owner && (
+        <Pressable
+          style={styles.pinnedBy}
+          onPress={() =>
+            pin.user_id &&
+            router.push({ pathname: '/user/[id]', params: { id: pin.user_id } })
+          }
+        >
+          <Avatar uri={owner.avatar_url} name={owner.display_name} size={22} />
+          <Text style={[styles.pinnedByText, { color: c.textMuted }]}>
+            Pinned by {owner.display_name ?? 'someone'}
+            {owner.username ? ` · @${owner.username}` : ''}
+          </Text>
+        </Pressable>
+      )}
+
       <View style={styles.section}>
         <Text style={[styles.label, { color: c.textMuted }]}>Place</Text>
         <Text style={styles.value}>{pin.place_name ?? '(unnamed)'}</Text>
@@ -386,6 +420,8 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, textTransform: 'uppercase' },
   value: { fontSize: 16, fontWeight: '500' },
   note: { fontSize: 16, lineHeight: 22, marginTop: 2 },
+  pinnedBy: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  pinnedByText: { fontSize: 13, fontWeight: '600' },
   shareHint: {
     fontSize: 13,
     textAlign: 'center',

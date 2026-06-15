@@ -22,12 +22,11 @@ import { listFriendSummary } from '@/lib/friends';
 import { pickImage, uploadImage } from '@/lib/images';
 import { createPlaylist, listPlaylists, type Playlist } from '@/lib/playlists';
 
-type PlaylistFilter = 'mine' | 'mine_friends' | 'friends' | 'discover' | 'all';
+type PlaylistFilter = 'mine' | 'friends' | 'discover' | 'all';
 const PLAYLIST_FILTERS: { key: PlaylistFilter; label: string }[] = [
   { key: 'mine', label: 'Mine' },
-  { key: 'mine_friends', label: 'Mine + friends' },
   { key: 'friends', label: 'Friends' },
-  { key: 'discover', label: 'Everyone else' },
+  { key: 'discover', label: 'Discover' },
   { key: 'all', label: 'All' },
 ];
 
@@ -89,8 +88,6 @@ export default function PlaylistsScreen() {
       switch (filter) {
         case 'mine':
           return inLibrary(p);
-        case 'mine_friends':
-          return inLibrary(p) || isFriendPl(p);
         case 'friends':
           return isFriendPl(p);
         case 'discover':

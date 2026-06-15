@@ -180,7 +180,7 @@ export default function FriendsScreen() {
               key={r.id}
               user={r}
               busy={busyId === r.id}
-              onOpen={() => router.push(`/user/${r.id}`)}
+              onOpen={() => router.push({ pathname: '/user/[id]', params: { id: r.id } })}
               onSend={() => handleSend(r.id)}
               onAccept={() => handleAccept(r.id)}
               onRemove={() => handleRemove(r.id)}
@@ -203,7 +203,7 @@ export default function FriendsScreen() {
                   key={s.other_id}
                   summary={s}
                   busy={busyId === s.other_id}
-                  onOpen={() => router.push(`/user/${s.other_id}`)}
+                  onOpen={() => router.push({ pathname: '/user/[id]', params: { id: s.other_id } })}
                   onAccept={() => handleAccept(s.other_id)}
                   onRemove={() => handleRemove(s.other_id)}
                 />
@@ -225,7 +225,7 @@ export default function FriendsScreen() {
                   key={s.other_id}
                   summary={s}
                   busy={busyId === s.other_id}
-                  onOpen={() => router.push(`/user/${s.other_id}`)}
+                  onOpen={() => router.push({ pathname: '/user/[id]', params: { id: s.other_id } })}
                   onRemove={() => handleRemove(s.other_id)}
                 />
               ))
@@ -242,7 +242,7 @@ export default function FriendsScreen() {
                   key={s.other_id}
                   summary={s}
                   busy={busyId === s.other_id}
-                  onOpen={() => router.push(`/user/${s.other_id}`)}
+                  onOpen={() => router.push({ pathname: '/user/[id]', params: { id: s.other_id } })}
                   onRemove={() => handleRemove(s.other_id)}
                 />
               ))}
