@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { EmptyState } from '@/components/EmptyState';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { listFriendSummary } from '@/lib/friends';
 import { pickImage, uploadImage } from '@/lib/images';
@@ -272,11 +273,15 @@ export default function PlaylistsScreen() {
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: c.textMuted }]}>
-              {filter === 'discover'
-                ? 'Nothing new to discover right now.'
-                : 'Nothing here yet — tap + New, or save one from Discover.'}
-            </Text>
+            <EmptyState
+              icon="music.note.list"
+              title={filter === 'discover' ? 'Nothing to discover' : 'No playlists yet'}
+              subtitle={
+                filter === 'discover'
+                  ? "Public playlists from others will show up here."
+                  : 'Tap + New to make one, or save one from Discover.'
+              }
+            />
           }
           renderItem={({ item }) => (
             <Pressable

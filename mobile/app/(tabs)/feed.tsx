@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { EmptyState } from '@/components/EmptyState';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import {
   listFriendActivity,
@@ -71,15 +72,11 @@ export default function FeedScreen() {
             />
           }
           ListEmptyComponent={
-            <RNView style={styles.empty}>
-              <Text style={[styles.emptyTitle, { color: c.textMuted }]}>
-                Nothing here yet.
-              </Text>
-              <Text style={[styles.emptyBody, { color: c.textSubtle }]}>
-                When friends drop public pins or make public playlists,
-                they'll show up here.
-              </Text>
-            </RNView>
+            <EmptyState
+              icon="sparkles"
+              title="Nothing here yet"
+              subtitle="When friends drop pins or make playlists, they'll show up here."
+            />
           }
           renderItem={({ item }) => (
             <ActivityRow

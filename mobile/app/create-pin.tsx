@@ -16,6 +16,7 @@ import {
 import * as Location from 'expo-location';
 
 import ClipRangeSlider from '@/components/ClipRangeSlider';
+import { PinLocationMap } from '@/components/PinLocationMap';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { VisibilitySelector } from '@/components/VisibilitySelector';
 import { pickImage, uploadImage } from '@/lib/images';
@@ -57,7 +58,6 @@ export default function CreatePinScreen() {
   );
   const [visibility, setVisibility] = useState<PinVisibility>('private');
   const [saving, setSaving] = useState(false);
-  const [locating, setLocating] = useState(false);
 
   // Clip-preview playback (drives the user's Spotify to play the chosen
   // segment so they can hear it before saving).
@@ -145,46 +145,23 @@ export default function CreatePinScreen() {
     }
   };
 
-  // Default the place name from the coordinates (reverse geocode). Only
-  // fills if the user hasn't typed their own name.
+  // True once the user types their own place name — stops the map from
+  // overwriting it with the reverse-geocoded default.
+  const placeNameTouched = useRef(false);
+
+  // Default the place name from the chosen coordinates (reverse geocode),
+  // unless the user has typed their own.
   const fillPlaceName = async (lat: number, lng: number) => {
+    if (placeNameTouched.current) return;
     try {
       const [g] = await Location.reverseGeocodeAsync({
         latitude: lat,
         longitude: lng,
       });
       const guess = g?.name ?? g?.street ?? g?.city ?? null;
-      if (guess) setPlaceName((cur) => cur.trim() || guess);
+      if (guess) setPlaceName(guess);
     } catch {
-      // Geocoding unavailable — leave the field empty.
-    }
-  };
-
-  // When we arrive from a long-press on the map, prefill the place name
-  // from those coordinates.
-  useEffect(() => {
-    if (params.latitude && params.longitude) {
-      fillPlaceName(parseFloat(params.latitude), parseFloat(params.longitude));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const useCurrentLocation = async () => {
-    try {
-      setLocating(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required.');
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({});
-      setLatitude(loc.coords.latitude.toString());
-      setLongitude(loc.coords.longitude.toString());
-      fillPlaceName(loc.coords.latitude, loc.coords.longitude);
-    } catch (e: any) {
-      Alert.alert('Could not get location', e?.message ?? String(e));
-    } finally {
-      setLocating(false);
+      // Geocoding unavailable — leave the field as-is.
     }
   };
 
@@ -307,48 +284,15 @@ export default function CreatePinScreen() {
       )}
 
       <Text style={styles.section}>Location</Text>
-      <Pressable
-        style={[
-          styles.locButton,
-          { backgroundColor: c.walkingActive },
-          locating && styles.disabled,
-        ]}
-        onPress={useCurrentLocation}
-        disabled={locating}
-      >
-        {locating ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={[styles.locButtonText, { color: '#fff' }]}>
-            Use my location
-          </Text>
-        )}
-      </Pressable>
-
-      <View style={styles.row}>
-        <View style={styles.col}>
-          <Text style={[styles.label, { color: c.textMuted }]}>Latitude</Text>
-          <TextInput
-            style={inputStyle}
-            value={latitude}
-            onChangeText={setLatitude}
-            placeholder="40.34942"
-            placeholderTextColor={c.placeholder}
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={styles.col}>
-          <Text style={[styles.label, { color: c.textMuted }]}>Longitude</Text>
-          <TextInput
-            style={inputStyle}
-            value={longitude}
-            onChangeText={setLongitude}
-            placeholder="-74.65691"
-            placeholderTextColor={c.placeholder}
-            keyboardType="numeric"
-          />
-        </View>
-      </View>
+      <PinLocationMap
+        initialLat={params.latitude ? parseFloat(params.latitude) : null}
+        initialLng={params.longitude ? parseFloat(params.longitude) : null}
+        onChange={(lat, lng) => {
+          setLatitude(lat.toString());
+          setLongitude(lng.toString());
+          fillPlaceName(lat, lng);
+        }}
+      />
 
       <Text style={[styles.label, { color: c.textMuted }]}>
         Place name (optional)
@@ -356,8 +300,11 @@ export default function CreatePinScreen() {
       <TextInput
         style={inputStyle}
         value={placeName}
-        onChangeText={setPlaceName}
-        placeholder="e.g. Firestone Library"
+        onChangeText={(t) => {
+          setPlaceName(t);
+          placeNameTouched.current = true;
+        }}
+        placeholder="Defaults to the nearest place"
         placeholderTextColor={c.placeholder}
       />
 

@@ -17,6 +17,7 @@ import {
   View as RNView,
 } from 'react-native';
 
+import { EmptyState } from '@/components/EmptyState';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { listFriendSummary } from '@/lib/friends';
 import { listPins, type Pin } from '@/lib/pins';
@@ -145,13 +146,17 @@ export default function AllPinsScreen() {
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: c.textMuted }]}>
-              {mode === 'mine'
-                ? "You haven't pinned anything yet. Search a track and save your first one."
-                : mode === 'friends'
-                ? 'No pins from your friends yet. Either add friends or wait for them to drop public pins.'
-                : 'No pins to show.'}
-            </Text>
+            <EmptyState
+              icon="mappin.and.ellipse"
+              title={mode === 'mine' ? 'No pins yet' : 'Nothing here'}
+              subtitle={
+                mode === 'mine'
+                  ? 'Search a track and drop your first pin.'
+                  : mode === 'friends'
+                  ? "No pins from friends yet — add some, or wait for them to drop pins."
+                  : 'No pins to show.'
+              }
+            />
           }
           renderItem={({ item }) => (
             <Pressable
