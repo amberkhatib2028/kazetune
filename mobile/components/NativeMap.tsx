@@ -17,10 +17,18 @@ import * as Location from 'expo-location';
 
 import PinMarker from '@/components/PinMarker';
 import { useThemeColors } from '@/components/Themed';
+import { listFriendSummary } from '@/lib/friends';
 import { listPins, type Pin } from '@/lib/pins';
 import { useResolvedScheme } from '@/lib/themePreference';
 import { useWalkingMode } from '@/lib/useWalkingMode';
 import { usePublicPinPolicy } from '@/lib/walkingPreference';
+
+type MapFilter = 'mine' | 'friends' | 'everyone';
+const MAP_FILTERS: { value: MapFilter; label: string }[] = [
+  { value: 'mine', label: 'Mine' },
+  { value: 'friends', label: 'Friends' },
+  { value: 'everyone', label: 'Everyone' },
+];
 
 const FALLBACK_REGION = {
   latitude: 40.34942,
@@ -33,6 +41,10 @@ export default function NativeMap() {
   const c = useThemeColors();
   const scheme = useResolvedScheme();
   const [pins, setPins] = useState<Pin[]>([]);
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
+  // Which pins to show on the map: just mine, me + friends, or the whole
+  // world's public pins. (Display only — doesn't affect geofencing.)
+  const [filter, setFilter] = useState<MapFilter>('everyone');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mapRef = useRef<MapView>(null);
@@ -55,13 +67,34 @@ export default function NativeMap() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      setPins(await listPins());
+      const [pinsResult, friendsResult] = await Promise.all([
+        listPins(),
+        listFriendSummary().catch(() => []),
+      ]);
+      setPins(pinsResult);
+      const ids = new Set<string>();
+      for (const f of friendsResult) {
+        if (f.status === 'accepted') ids.add(f.other_id);
+      }
+      setFriendIds(ids);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load pins');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Markers to render, per the filter. list_pins already returns mine +
+  // every public pin (RLS), so "everyone" is the full set.
+  const displayedPins = useMemo(() => {
+    if (filter === 'mine') return pins.filter((p) => p.is_mine);
+    if (filter === 'friends') {
+      return pins.filter(
+        (p) => p.is_mine || (!!p.user_id && friendIds.has(p.user_id)),
+      );
+    }
+    return pins;
+  }, [pins, friendIds, filter]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -136,11 +169,10 @@ export default function NativeMap() {
           } as never);
         }}
       >
-        {pins.map((pin) => (
+        {displayedPins.map((pin) => (
           <PinMarker
             key={pin.id}
             pin={pin}
-            primaryColor={c.primary}
             onCalloutPress={() =>
               router.push({ pathname: '/pin-detail', params: { id: pin.id } })
             }
@@ -149,6 +181,33 @@ export default function NativeMap() {
       </MapView>
 
       <View style={styles.toggleWrap}>
+        <View
+          style={[
+            styles.segmented,
+            { backgroundColor: c.background, borderColor: c.border },
+          ]}
+        >
+          {MAP_FILTERS.map((f) => {
+            const selected = filter === f.value;
+            return (
+              <Pressable
+                key={f.value}
+                style={[styles.segment, selected && { backgroundColor: c.primary }]}
+                onPress={() => setFilter(f.value)}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    { color: selected ? c.primaryText : c.text },
+                  ]}
+                >
+                  {f.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <Pressable
           style={[
             styles.toggleBtn,
@@ -229,8 +288,28 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     alignItems: 'flex-start',
-    gap: 8,
+    gap: 10,
   },
+  segmented: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 3,
+    gap: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 21,
+    alignItems: 'center',
+  },
+  segmentText: { fontWeight: '600', fontSize: 13 },
   toggleBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,

@@ -11,14 +11,15 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   TextInput,
 } from 'react-native';
 import * as Location from 'expo-location';
 
 import ClipRangeSlider from '@/components/ClipRangeSlider';
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { VisibilitySelector } from '@/components/VisibilitySelector';
 import { pickImage, uploadImage } from '@/lib/images';
+import type { PinVisibility } from '@/lib/pins';
 import {
   PlaybackError,
   playTrackSegment,
@@ -54,7 +55,7 @@ export default function CreatePinScreen() {
   const [durationSeconds, setDurationSeconds] = useState(
     trackDurationSec > 0 ? Math.min(MIN_CLIP_SEC, trackDurationSec) : MIN_CLIP_SEC,
   );
-  const [isPublic, setIsPublic] = useState(false);
+  const [visibility, setVisibility] = useState<PinVisibility>('private');
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
 
@@ -197,7 +198,7 @@ export default function CreatePinScreen() {
         p_artist_name: params.artistName,
         p_start_seconds: start,
         p_duration_seconds: dur,
-        p_is_public: isPublic,
+        p_visibility: visibility,
         p_preview_url: params.previewUrl ?? '',
         p_album_image_url: params.albumImageUrl ?? '',
         p_image_url: uploadedUrl ?? '',
@@ -376,12 +377,8 @@ export default function CreatePinScreen() {
         <Text style={[styles.hint, { color: c.textMuted }]}>{previewMsg}</Text>
       )}
 
-      <View style={[styles.row, styles.publicRow]}>
-        <Text style={[styles.label, { color: c.textMuted }]}>
-          Public (others can see)
-        </Text>
-        <Switch value={isPublic} onValueChange={setIsPublic} />
-      </View>
+      <Text style={styles.section}>Who can see this?</Text>
+      <VisibilitySelector value={visibility} onChange={setVisibility} />
 
       <Pressable
         style={[

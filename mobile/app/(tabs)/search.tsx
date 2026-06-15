@@ -12,6 +12,7 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { searchTracks, type SpotifyTrack } from '@/lib/spotify';
@@ -105,10 +106,17 @@ export default function SearchScreen() {
 
       {!hasQuery ? (
         <View style={styles.hintWrap}>
+          <View style={[styles.hintIcon, { backgroundColor: c.cardHighlight }]}>
+            <SymbolView
+              name="music.note"
+              tintColor={c.primary}
+              size={38}
+            />
+          </View>
           <Text style={styles.hintTitle}>Pin a song to a place</Text>
           <Text style={[styles.hintBody, { color: c.textMuted }]}>
-            Search for any track on Spotify, tap it, set a location and a
-            ≥20-second clip. It'll play when someone walks past.
+            Find any track, drop it on the map, and pick the part that plays
+            when someone walks by.
           </Text>
         </View>
       ) : (
@@ -209,10 +217,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
-    gap: 8,
+    gap: 14,
   },
-  hintTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
-  hintBody: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  hintIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hintTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  hintBody: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 300,
+  },
 
   list: { paddingBottom: 32 },
   row: {

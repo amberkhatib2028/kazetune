@@ -2,6 +2,8 @@
 
 import { supabase } from './supabase';
 
+export type PinVisibility = 'private' | 'friends' | 'public';
+
 export type Pin = {
   id: string;
   // Optional because PlaylistPin (which extends Pin structurally) and
@@ -17,6 +19,7 @@ export type Pin = {
   start_seconds: number;
   duration_seconds: number;
   is_public: boolean;
+  visibility: PinVisibility;
   is_mine: boolean;
   preview_url: string | null;
   album_image_url: string | null;
@@ -40,7 +43,7 @@ export async function updatePin(opts: {
   placeName: string;
   startSeconds: number;
   durationSeconds: number;
-  isPublic: boolean;
+  visibility: PinVisibility;
   /** Empty string or null to clear; otherwise the new public URL. */
   imageUrl: string | null;
   /** Free-text note; '' clears it. */
@@ -53,7 +56,7 @@ export async function updatePin(opts: {
     p_place_name: opts.placeName,
     p_start_seconds: opts.startSeconds,
     p_duration_seconds: opts.durationSeconds,
-    p_is_public: opts.isPublic,
+    p_visibility: opts.visibility,
     p_image_url: opts.imageUrl ?? '',
     p_description: opts.description,
   });

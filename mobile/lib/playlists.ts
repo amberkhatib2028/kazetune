@@ -33,6 +33,7 @@ export type PlaylistPin = {
   album_image_url: string | null;
   image_url: string | null;
   description: string | null;
+  visibility: 'private' | 'friends' | 'public';
 };
 
 export async function listPlaylists(): Promise<Playlist[]> {

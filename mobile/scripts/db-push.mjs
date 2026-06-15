@@ -47,6 +47,7 @@ const ORDER = [
   'user_images_migration.sql',
   'username_migration.sql',
   'pin_description_migration.sql',
+  'pin_visibility_migration.sql',
   'delete_account_rpc.sql',
 ];
 

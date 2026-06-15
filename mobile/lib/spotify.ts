@@ -62,10 +62,11 @@ export async function getTrack(id: string): Promise<SpotifyTrack> {
 
 export async function searchTracks(query: string): Promise<SpotifyTrack[]> {
   if (!query.trim()) return [];
-  // Omitting `limit` — Spotify defaults to 20. We had a "Invalid limit"
-  // 400 even with limit=20, so just take the default for now.
-  const path = `/search?q=${encodeURIComponent(query.trim())}&type=track`;
-  console.log('[spotify] GET', path);
+  // limit=50 (Spotify's max) so the list feels full like Spotify's own
+  // search. market=from_token returns tracks playable for this user.
+  const path =
+    `/search?q=${encodeURIComponent(query.trim())}` +
+    `&type=track&limit=50&market=from_token`;
   const data = await spotifyFetch(path);
   return data.tracks?.items ?? [];
 }

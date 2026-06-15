@@ -12,7 +12,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   TextInput,
   View as RNView,
 } from 'react-native';
@@ -20,8 +19,9 @@ import * as Location from 'expo-location';
 
 import ClipRangeSlider from '@/components/ClipRangeSlider';
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { VisibilitySelector } from '@/components/VisibilitySelector';
 import { pickImage, uploadImage } from '@/lib/images';
-import { listPins, updatePin, type Pin } from '@/lib/pins';
+import { listPins, updatePin, type Pin, type PinVisibility } from '@/lib/pins';
 import { getTrack } from '@/lib/spotify';
 import {
   PlaybackError,
@@ -44,7 +44,7 @@ export default function EditPinScreen() {
   const [description, setDescription] = useState('');
   const [startSeconds, setStartSeconds] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(20);
-  const [isPublic, setIsPublic] = useState(false);
+  const [visibility, setVisibility] = useState<PinVisibility>('private');
 
   // Full track length — pins don't store it, so we fetch from Spotify to
   // scope the clip slider. 0 until loaded (or if the fetch fails).
@@ -98,7 +98,7 @@ export default function EditPinScreen() {
       setDescription(found.description ?? '');
       setStartSeconds(found.start_seconds);
       setDurationSeconds(found.duration_seconds);
-      setIsPublic(found.is_public);
+      setVisibility(found.visibility);
       setExistingImageUrl(found.image_url);
 
       // Recover the full track length for the clip slider. Best-effort:
@@ -255,7 +255,7 @@ export default function EditPinScreen() {
         placeName,
         startSeconds: start,
         durationSeconds: dur,
-        isPublic,
+        visibility,
         imageUrl: finalImageUrl,
         description: description.trim(),
       });
@@ -443,12 +443,8 @@ export default function EditPinScreen() {
         <Text style={[styles.hint, { color: c.textMuted }]}>{previewMsg}</Text>
       )}
 
-      <RNView style={[styles.row, styles.publicRow]}>
-        <Text style={[styles.label, { color: c.textMuted }]}>
-          Public (others can see)
-        </Text>
-        <Switch value={isPublic} onValueChange={setIsPublic} />
-      </RNView>
+      <Text style={styles.section}>Who can see this?</Text>
+      <VisibilitySelector value={visibility} onChange={setVisibility} />
 
       <Pressable
         style={[

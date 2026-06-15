@@ -15,12 +15,12 @@ import {
   ScrollView,
   Share,
   StyleSheet,
-  Switch,
   View as RNView,
 } from 'react-native';
 
 import { ClipPreview } from '@/components/ClipPreview';
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { VisibilitySelector } from '@/components/VisibilitySelector';
 import { getTrack } from '@/lib/spotify';
 import {
   PlaybackError,
@@ -28,7 +28,7 @@ import {
   playPinClip,
   stopPinClip,
 } from '@/lib/spotifyPlayback';
-import { listPins, type Pin } from '@/lib/pins';
+import { listPins, type Pin, type PinVisibility } from '@/lib/pins';
 import { supabase } from '@/lib/supabase';
 
 export default function PinDetailScreen() {
@@ -126,17 +126,17 @@ export default function PinDetailScreen() {
     }
   };
 
-  const togglePublic = async () => {
-    if (!pin) return;
+  const changeVisibility = async (v: PinVisibility) => {
+    if (!pin || v === pin.visibility) return;
     try {
       setBusy(true);
-      const next = !pin.is_public;
       const { error } = await supabase
         .from('pins')
-        .update({ is_public: next })
+        .update({ visibility: v })
         .eq('id', pin.id);
       if (error) throw error;
-      setPin({ ...pin, is_public: next });
+      // The DB trigger keeps is_public = (visibility === 'public').
+      setPin({ ...pin, visibility: v, is_public: v === 'public' });
     } catch (e: any) {
       Alert.alert('Could not update', e?.message ?? String(e));
     } finally {
@@ -240,7 +240,7 @@ export default function PinDetailScreen() {
         <Text style={[styles.label, { color: c.textMuted }]}>Place</Text>
         <Text style={styles.value}>{pin.place_name ?? '(unnamed)'}</Text>
         <Text style={[styles.coords, { color: c.textSubtle }]}>
-          ({pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)})
+          ({pin.latitude.toFixed(2)}, {pin.longitude.toFixed(2)})
         </Text>
       </View>
 
@@ -307,9 +307,9 @@ export default function PinDetailScreen() {
         </Text>
       </Pressable>
 
-      {pin.is_mine && !pin.is_public && (
+      {pin.is_mine && pin.visibility === 'private' && (
         <Text style={[styles.shareHint, { color: c.textSubtle }]}>
-          This pin is private — make it public below so others can open your link.
+          Private — only you can open this. Choose who can see it below.
         </Text>
       )}
 
@@ -329,11 +329,13 @@ export default function PinDetailScreen() {
             </Text>
           </Pressable>
 
-          <View style={[styles.row, styles.publicRow]}>
-            <Text style={styles.value}>Public (others can see)</Text>
-            <Switch
-              value={pin.is_public}
-              onValueChange={togglePublic}
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: c.textMuted }]}>
+              Who can see this
+            </Text>
+            <VisibilitySelector
+              value={pin.visibility}
+              onChange={changeVisibility}
               disabled={busy}
             />
           </View>
@@ -384,7 +386,13 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, textTransform: 'uppercase' },
   value: { fontSize: 16, fontWeight: '500' },
   note: { fontSize: 16, lineHeight: 22, marginTop: 2 },
-  shareHint: { fontSize: 12, marginTop: -4, marginBottom: 4 },
+  shareHint: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 12,
+    lineHeight: 18,
+  },
   coords: { fontSize: 12, fontFamily: 'SpaceMono' },
   muted: { fontSize: 12, marginTop: 4 },
 
