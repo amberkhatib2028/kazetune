@@ -48,6 +48,7 @@ const ORDER = [
   'username_migration.sql',
   'pin_description_migration.sql',
   'pin_visibility_migration.sql',
+  'saved_playlists_migration.sql',
   'delete_account_rpc.sql',
 ];
 

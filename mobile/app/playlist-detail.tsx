@@ -24,6 +24,8 @@ import {
   listPlaylistPins,
   listPlaylists,
   removePinFromPlaylist,
+  savePlaylist,
+  unsavePlaylist,
   type Playlist,
   type PlaylistPin,
 } from '@/lib/playlists';
@@ -103,6 +105,24 @@ export default function PlaylistDetailScreen() {
       cancelled = true;
     };
   }, [includePublic]);
+
+  const toggleSave = async () => {
+    if (!playlist) return;
+    try {
+      setBusy(true);
+      if (playlist.is_saved) {
+        await unsavePlaylist(id);
+        setPlaylist({ ...playlist, is_saved: false });
+      } else {
+        await savePlaylist(id);
+        setPlaylist({ ...playlist, is_saved: true });
+      }
+    } catch (e: any) {
+      Alert.alert('Could not update', e?.message ?? String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const onShare = async () => {
     if (!playlist) return;
@@ -259,6 +279,21 @@ export default function PlaylistDetailScreen() {
             ↗ Share playlist
           </Text>
         </Pressable>
+        {!playlist.is_mine && (
+          <Pressable
+            style={[
+              styles.routeBtn,
+              { borderColor: c.primary },
+              busy && styles.disabled,
+            ]}
+            onPress={toggleSave}
+            disabled={busy}
+          >
+            <Text style={[styles.routeBtnText, { color: c.primary }]}>
+              {playlist.is_saved ? '♥ Saved to library' : '♡ Save to library'}
+            </Text>
+          </Pressable>
+        )}
         {walkingMsg && (
           <Text style={[styles.walkMsg, { color: c.textMuted }]}>
             {walkingMsg}

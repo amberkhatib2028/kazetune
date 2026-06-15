@@ -2,13 +2,14 @@
 // ones at the top. Tapping a row opens the playlist-detail modal.
 
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   TextInput,
@@ -17,12 +18,24 @@ import {
 
 import { Avatar } from '@/components/Avatar';
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { listFriendSummary } from '@/lib/friends';
 import { pickImage, uploadImage } from '@/lib/images';
 import { createPlaylist, listPlaylists, type Playlist } from '@/lib/playlists';
+
+type PlaylistFilter = 'mine' | 'mine_friends' | 'friends' | 'discover' | 'all';
+const PLAYLIST_FILTERS: { key: PlaylistFilter; label: string }[] = [
+  { key: 'mine', label: 'Mine' },
+  { key: 'mine_friends', label: 'Mine + friends' },
+  { key: 'friends', label: 'Friends' },
+  { key: 'discover', label: 'Everyone else' },
+  { key: 'all', label: 'All' },
+];
 
 export default function PlaylistsScreen() {
   const c = useThemeColors();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<PlaylistFilter>('mine');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +62,14 @@ export default function PlaylistsScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      setPlaylists(await listPlaylists());
+      const [pls, friends] = await Promise.all([
+        listPlaylists(),
+        listFriendSummary().catch(() => []),
+      ]);
+      setPlaylists(pls);
+      const ids = new Set<string>();
+      for (const f of friends) if (f.status === 'accepted') ids.add(f.other_id);
+      setFriendIds(ids);
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load playlists');
     } finally {
@@ -58,6 +78,29 @@ export default function PlaylistsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // "Mine" = made or saved. A friend's public playlist only shows up
+  // under Friends/Everyone, not your library.
+  const visible = useMemo(() => {
+    const isFriendPl = (p: Playlist) =>
+      !p.is_mine && !!p.user_id && friendIds.has(p.user_id);
+    const inLibrary = (p: Playlist) => p.is_mine || p.is_saved;
+    return playlists.filter((p) => {
+      switch (filter) {
+        case 'mine':
+          return inLibrary(p);
+        case 'mine_friends':
+          return inLibrary(p) || isFriendPl(p);
+        case 'friends':
+          return isFriendPl(p);
+        case 'discover':
+          return p.is_public && !inLibrary(p) && !isFriendPl(p);
+        case 'all':
+        default:
+          return inLibrary(p) || p.is_public;
+      }
+    });
+  }, [playlists, friendIds, filter]);
 
   const save = async () => {
     if (!title.trim()) {
@@ -195,16 +238,40 @@ export default function PlaylistsScreen() {
         </View>
       )}
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterBar}
+      >
+        {PLAYLIST_FILTERS.map((f) => {
+          const sel = filter === f.key;
+          return (
+            <Pressable
+              key={f.key}
+              onPress={() => setFilter(f.key)}
+              style={[styles.chip, { backgroundColor: sel ? c.primary : c.card }]}
+            >
+              <Text style={[styles.chipText, { color: sel ? c.primaryText : c.text }]}>
+                {f.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: 32 }} color={c.text} />
       ) : (
         <FlatList
-          data={playlists}
+          data={visible}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={[styles.empty, { color: c.textMuted }]}>
-              No playlists yet — tap + New to make one.
+              {filter === 'mine'
+                ? 'No playlists yet — tap + New, or save one you find.'
+                : 'Nothing here.'}
             </Text>
           }
           renderItem={({ item }) => (
@@ -324,6 +391,11 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { fontWeight: '700' },
   disabled: { opacity: 0.6 },
+
+  filterScroll: { flexGrow: 0, marginBottom: 12 },
+  filterBar: { gap: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+  chipText: { fontWeight: '600', fontSize: 13 },
 
   list: { paddingBottom: 32, gap: 8 },
   row: {

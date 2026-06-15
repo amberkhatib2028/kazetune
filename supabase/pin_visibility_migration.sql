@@ -72,9 +72,16 @@ USING (
 -- ====================================================================
 -- create_pin (p_visibility replaces p_is_public)
 -- ====================================================================
+-- Drop the prior boolean-param version AND any existing text-param
+-- version, so this migration is safe to re-run (db:push runs all files
+-- every time, and pin_description recreates the boolean one).
 DROP FUNCTION IF EXISTS public.create_pin(
     double precision, double precision, text, text, text, text,
     integer, integer, boolean, text, text, text, text
+);
+DROP FUNCTION IF EXISTS public.create_pin(
+    double precision, double precision, text, text, text, text,
+    integer, integer, text, text, text, text, text
 );
 
 CREATE FUNCTION public.create_pin(
@@ -137,6 +144,10 @@ $$;
 DROP FUNCTION IF EXISTS public.update_pin(
     uuid, double precision, double precision, text, integer, integer,
     boolean, text, text
+);
+DROP FUNCTION IF EXISTS public.update_pin(
+    uuid, double precision, double precision, text, integer, integer,
+    text, text, text
 );
 
 CREATE FUNCTION public.update_pin(

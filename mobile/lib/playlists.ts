@@ -9,6 +9,7 @@ export type Playlist = {
   description: string | null;
   is_public: boolean;
   is_mine: boolean;
+  is_saved: boolean;
   pin_count: number;
   created_at: string;
   cover_image_url: string | null;
@@ -40,6 +41,21 @@ export async function listPlaylists(): Promise<Playlist[]> {
   const { data, error } = await supabase.rpc('list_playlists');
   if (error) throw error;
   return (data ?? []) as Playlist[];
+}
+
+/** Save someone else's public playlist to your library. */
+export async function savePlaylist(playlistId: string): Promise<void> {
+  const { error } = await supabase.rpc('save_playlist', {
+    p_playlist_id: playlistId,
+  });
+  if (error) throw error;
+}
+
+export async function unsavePlaylist(playlistId: string): Promise<void> {
+  const { error } = await supabase.rpc('unsave_playlist', {
+    p_playlist_id: playlistId,
+  });
+  if (error) throw error;
 }
 
 export async function createPlaylist(opts: {
