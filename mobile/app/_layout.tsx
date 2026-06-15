@@ -194,7 +194,7 @@ function NavStack() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? navDark : navLight}>
       <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: '' }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="choose-username" options={{ headerShown: false }} />
         <Stack.Screen
