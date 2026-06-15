@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 // task must be defined before iOS/Android tries to invoke it on a
 // background wake-up). Keep this above any other top-level work.
 import '@/lib/backgroundGeofencing';
+import { NotificationsProvider } from '@/lib/notifications';
 import {
   ThemePreferenceProvider,
   useResolvedScheme,
@@ -88,7 +89,9 @@ function RootLayoutNav() {
   return (
     <ThemePreferenceProvider>
       <WalkingPreferenceProvider>
-        <NavStack />
+        <NotificationsProvider>
+          <NavStack />
+        </NotificationsProvider>
       </WalkingPreferenceProvider>
     </ThemePreferenceProvider>
   );

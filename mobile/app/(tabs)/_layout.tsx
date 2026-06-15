@@ -6,9 +6,11 @@ import { Platform, Pressable } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { useNotifications } from '@/lib/notifications';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { incomingCount } = useNotifications();
 
   return (
     <Tabs
@@ -101,6 +103,7 @@ export default function TabLayout() {
         name="friends"
         options={{
           title: 'Friends',
+          tabBarBadge: incomingCount > 0 ? incomingCount : undefined,
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{ ios: 'person.2', android: 'group', web: 'people' }}

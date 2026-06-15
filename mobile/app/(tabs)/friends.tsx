@@ -24,9 +24,11 @@ import {
   type FriendSummary,
   type UserSearchResult,
 } from '@/lib/friends';
+import { useNotifications } from '@/lib/notifications';
 
 export default function FriendsScreen() {
   const c = useThemeColors();
+  const { refresh: refreshBadge } = useNotifications();
   const [summary, setSummary] = useState<FriendSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +89,7 @@ export default function FriendsScreen() {
 
   const refreshAll = async () => {
     await load();
+    refreshBadge();
     if (query.trim()) await doSearch();
   };
 
@@ -145,7 +148,7 @@ export default function FriendsScreen() {
               backgroundColor: c.inputBackground,
             },
           ]}
-          placeholder="Search by display name"
+          placeholder="Search by name or @username"
           placeholderTextColor={c.placeholder}
           value={query}
           onChangeText={setQuery}
@@ -267,9 +270,9 @@ function SearchRow(props: {
         <Text style={styles.rowName} numberOfLines={1}>
           {user.display_name ?? '(no name)'}
         </Text>
-        {user.spotify_id && (
+        {user.username && (
           <Text style={[styles.rowSub, { color: c.textSubtle }]}>
-            Spotify: {user.spotify_id}
+            @{user.username}
           </Text>
         )}
       </RNView>
@@ -328,11 +331,6 @@ function FriendRow(props: {
         <Text style={styles.rowName} numberOfLines={1}>
           {summary.other_display_name ?? '(no name)'}
         </Text>
-        {summary.other_spotify_id && (
-          <Text style={[styles.rowSub, { color: c.textSubtle }]}>
-            Spotify: {summary.other_spotify_id}
-          </Text>
-        )}
       </RNView>
       {busy ? (
         <ActivityIndicator color={c.text} />
