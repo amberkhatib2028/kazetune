@@ -13,22 +13,22 @@ import { useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 
-import { Text } from '@/components/Themed';
+import { Text, useThemeColors } from '@/components/Themed';
 import type { Pin } from '@/lib/pins';
 
 type Props = {
   pin: Pin;
-  primaryColor: string;
+  /** Deprecated — colors now come from the theme. Kept optional so
+   *  existing callers don't break. */
+  primaryColor?: string;
   onCalloutPress?: () => void;
 };
 
-export default function PinMarker({
-  pin,
-  primaryColor,
-  onCalloutPress,
-}: Props) {
+export default function PinMarker({ pin, onCalloutPress }: Props) {
+  const c = useThemeColors();
   const imageUrl = pin.image_url ?? pin.album_image_url ?? null;
-  const ringColor = pin.is_mine ? primaryColor : '#FF3B30';
+  // Yours = warm sunset pink, everyone else = cool teal.
+  const ringColor = pin.is_mine ? c.pinMine : c.pinOther;
   const [tracking, setTracking] = useState(true);
 
   // For the letter-fallback path there's no Image to listen on, so

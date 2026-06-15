@@ -19,7 +19,9 @@ import {
   View as RNView,
 } from 'react-native';
 
+import { ClipPreview } from '@/components/ClipPreview';
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { getTrack } from '@/lib/spotify';
 import {
   PlaybackError,
   getCurrentPinId,
@@ -38,12 +40,20 @@ export default function PinDetailScreen() {
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [loadingClip, setLoadingClip] = useState(false);
+  // Full track length (pins don't store it) so we can show where the clip
+  // sits. 0 until loaded / if the fetch fails.
+  const [trackDurationSec, setTrackDurationSec] = useState(0);
 
   const load = useCallback(async () => {
     try {
       const pins = await listPins();
       const found = pins.find((p) => p.id === id) ?? null;
       setPin(found);
+      if (found) {
+        getTrack(found.spotify_track_id)
+          .then((t) => setTrackDurationSec(Math.floor(t.duration_ms / 1000)))
+          .catch(() => setTrackDurationSec(0));
+      }
     } finally {
       setLoading(false);
     }
@@ -230,7 +240,7 @@ export default function PinDetailScreen() {
         <Text style={[styles.label, { color: c.textMuted }]}>Place</Text>
         <Text style={styles.value}>{pin.place_name ?? '(unnamed)'}</Text>
         <Text style={[styles.coords, { color: c.textSubtle }]}>
-          {pin.latitude.toFixed(5)}, {pin.longitude.toFixed(5)}
+          ({pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)})
         </Text>
       </View>
 
@@ -243,9 +253,17 @@ export default function PinDetailScreen() {
 
       <View style={styles.section}>
         <Text style={[styles.label, { color: c.textMuted }]}>Clip</Text>
-        <Text style={styles.value}>
-          Starts at {pin.start_seconds}s · {pin.duration_seconds}s long
-        </Text>
+        {trackDurationSec > 0 ? (
+          <ClipPreview
+            totalSec={trackDurationSec}
+            startSec={pin.start_seconds}
+            durationSec={pin.duration_seconds}
+          />
+        ) : (
+          <Text style={styles.value}>
+            Starts at {pin.start_seconds}s · {pin.duration_seconds}s long
+          </Text>
+        )}
       </View>
 
       <Pressable

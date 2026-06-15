@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
+import Colors from '@/constants/Colors';
 import { isOnboardingShown, markOnboardingShown } from '@/lib/onboarding';
 import { supabase } from '@/lib/supabase';
 // Side-effect import: runs the module-top-level TaskManager.defineTask
@@ -29,6 +30,34 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+
+// Custom navigation themes so the header + tab bar use our cream/plum
+// palette instead of React Navigation's default white/black chrome.
+// card = background makes the header and tab bar blend seamlessly.
+const navLight = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: Colors.light.background,
+    card: Colors.light.background,
+    text: Colors.light.text,
+    border: Colors.light.separator,
+    primary: Colors.light.primary,
+    notification: Colors.light.primary,
+  },
+};
+const navDark = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+    card: Colors.dark.background,
+    text: Colors.dark.text,
+    border: Colors.dark.separator,
+    primary: Colors.dark.primary,
+    notification: Colors.dark.primary,
+  },
+};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -160,7 +189,7 @@ function NavStack() {
   }, [authReady, session, segments, router, onboardingChecked]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'dark' ? navDark : navLight}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />

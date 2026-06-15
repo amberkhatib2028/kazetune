@@ -18,6 +18,7 @@ import * as Location from 'expo-location';
 import PinMarker from '@/components/PinMarker';
 import { useThemeColors } from '@/components/Themed';
 import { listPins, type Pin } from '@/lib/pins';
+import { useResolvedScheme } from '@/lib/themePreference';
 import { useWalkingMode } from '@/lib/useWalkingMode';
 import { usePublicPinPolicy } from '@/lib/walkingPreference';
 
@@ -30,6 +31,7 @@ const FALLBACK_REGION = {
 
 export default function NativeMap() {
   const c = useThemeColors();
+  const scheme = useResolvedScheme();
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +119,7 @@ export default function NativeMap() {
         ref={mapRef}
         style={styles.map}
         initialRegion={initialRegion}
+        userInterfaceStyle={scheme}
         showsUserLocation
         showsMyLocationButton={false}
         onLongPress={(e) => {

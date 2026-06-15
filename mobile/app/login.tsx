@@ -1,12 +1,12 @@
 // Sign-in screen — only entry point when there's no Supabase session.
-// Single "Sign in with Spotify" button kicks off the OAuth flow.
+// A sunset-gradient hero with a single "Sign in with Spotify" button.
 
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 
-import { Text, View, useThemeColors } from '@/components/Themed';
+import { SunsetGradient } from '@/components/Gradient';
 import { createSessionFromUrl, supabase } from '@/lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -15,7 +15,6 @@ const SPOTIFY_SCOPES =
   'user-read-email user-read-private streaming user-modify-playback-state user-read-playback-state user-read-currently-playing';
 
 export default function LoginScreen() {
-  const c = useThemeColors();
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
 
@@ -48,34 +47,27 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SunsetGradient
+      style={styles.container}
+      colors={['#FFC9A9', '#FF8FA3', '#C89BE0']}
+    >
       <Text style={styles.title}>KazeTune</Text>
-      <Text style={[styles.subtitle, { color: c.textMuted }]}>
-        Go where the wind takes you.
-      </Text>
+      <Text style={styles.subtitle}>Go where the wind takes you.</Text>
 
       <Pressable
-        style={[
-          styles.button,
-          { backgroundColor: c.primary },
-          loading && styles.buttonDisabled,
-        ]}
+        style={[styles.button, loading && styles.buttonDisabled]}
         onPress={signInWithSpotify}
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color={c.primaryText} />
+          <ActivityIndicator color="#FF6F91" />
         ) : (
-          <Text style={[styles.buttonText, { color: c.primaryText }]}>
-            Sign in with Spotify
-          </Text>
+          <Text style={styles.buttonText}>Sign in with Spotify</Text>
         )}
       </Pressable>
 
-      {errorText && (
-        <Text style={[styles.error, { color: c.danger }]}>{errorText}</Text>
-      )}
-    </View>
+      {errorText && <Text style={styles.error}>{errorText}</Text>}
+    </SunsetGradient>
   );
 }
 
@@ -87,16 +79,42 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 12,
   },
-  title: { fontSize: 48, fontWeight: '700' },
-  subtitle: { fontSize: 18, marginBottom: 24 },
+  title: {
+    fontSize: 54,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(120,60,90,0.25)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.95)',
+    marginBottom: 28,
+    textShadowColor: 'rgba(120,60,90,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
   button: {
+    backgroundColor: '#fff',
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 24,
+    paddingHorizontal: 36,
+    borderRadius: 30,
     minWidth: 240,
     alignItems: 'center',
+    shadowColor: '#7A3C5A',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
+    elevation: 4,
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { fontSize: 16, fontWeight: '600' },
-  error: { marginTop: 16, textAlign: 'center' },
+  buttonDisabled: { opacity: 0.7 },
+  buttonText: { fontSize: 16, fontWeight: '700', color: '#FF6F91' },
+  error: {
+    marginTop: 16,
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: '600',
+  },
 });

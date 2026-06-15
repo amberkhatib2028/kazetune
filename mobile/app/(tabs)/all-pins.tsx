@@ -182,7 +182,7 @@ export default function AllPinsScreen() {
                   {item.track_name} — {item.artist_name}
                 </Text>
                 <Text style={[styles.rowMeta, { color: c.textSubtle }]}>
-                  {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
+                  ({item.latitude.toFixed(4)}, {item.longitude.toFixed(4)})
                 </Text>
               </RNView>
               <RNView style={styles.badges}>
