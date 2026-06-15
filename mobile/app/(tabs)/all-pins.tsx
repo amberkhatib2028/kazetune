@@ -176,10 +176,11 @@ export default function AllPinsScreen() {
               )}
               <RNView style={styles.rowText}>
                 <Text style={styles.rowTitle} numberOfLines={1}>
-                  {item.place_name ?? item.track_name}
+                  {item.track_name}
                 </Text>
                 <Text style={[styles.rowSub, { color: c.textMuted }]} numberOfLines={1}>
-                  {item.track_name} — {item.artist_name}
+                  {item.artist_name}
+                  {item.place_name ? ` · ${item.place_name}` : ''}
                 </Text>
               </RNView>
               <RNView style={styles.badges}>

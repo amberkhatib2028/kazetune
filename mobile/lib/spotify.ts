@@ -62,11 +62,11 @@ export async function getTrack(id: string): Promise<SpotifyTrack> {
 
 export async function searchTracks(query: string): Promise<SpotifyTrack[]> {
   if (!query.trim()) return [];
-  // limit=50 (Spotify's max) so the list feels full like Spotify's own
-  // search. market=from_token returns tracks playable for this user.
-  const path =
-    `/search?q=${encodeURIComponent(query.trim())}` +
-    `&type=track&limit=50&market=from_token`;
+  // Spotify caps search `limit` at 10 for apps in Development Mode (no
+  // extended quota) — anything higher 400s with "Invalid limit", and
+  // omitting it returns only 5. 10 is the max until the app is granted
+  // Extended Quota Mode in the Spotify dashboard.
+  const path = `/search?q=${encodeURIComponent(query.trim())}&type=track&limit=10`;
   const data = await spotifyFetch(path);
   return data.tracks?.items ?? [];
 }
