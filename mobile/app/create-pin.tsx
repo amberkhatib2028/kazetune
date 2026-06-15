@@ -145,6 +145,30 @@ export default function CreatePinScreen() {
     }
   };
 
+  // Default the place name from the coordinates (reverse geocode). Only
+  // fills if the user hasn't typed their own name.
+  const fillPlaceName = async (lat: number, lng: number) => {
+    try {
+      const [g] = await Location.reverseGeocodeAsync({
+        latitude: lat,
+        longitude: lng,
+      });
+      const guess = g?.name ?? g?.street ?? g?.city ?? null;
+      if (guess) setPlaceName((cur) => cur.trim() || guess);
+    } catch {
+      // Geocoding unavailable — leave the field empty.
+    }
+  };
+
+  // When we arrive from a long-press on the map, prefill the place name
+  // from those coordinates.
+  useEffect(() => {
+    if (params.latitude && params.longitude) {
+      fillPlaceName(parseFloat(params.latitude), parseFloat(params.longitude));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const useCurrentLocation = async () => {
     try {
       setLocating(true);
@@ -156,6 +180,7 @@ export default function CreatePinScreen() {
       const loc = await Location.getCurrentPositionAsync({});
       setLatitude(loc.coords.latitude.toString());
       setLongitude(loc.coords.longitude.toString());
+      fillPlaceName(loc.coords.latitude, loc.coords.longitude);
     } catch (e: any) {
       Alert.alert('Could not get location', e?.message ?? String(e));
     } finally {
@@ -412,7 +437,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   albumArt: { width: 72, height: 72, borderRadius: 6 },
-  trackText: { flex: 1, gap: 2 },
+  // Transparent so it doesn't paint the page background over the card
+  // (the themed View defaults to the screen background otherwise).
+  trackText: { flex: 1, gap: 2, backgroundColor: 'transparent' },
   trackName: { fontSize: 16, fontWeight: '600' },
   artist: { fontSize: 13 },
   trackDuration: { fontSize: 11, marginTop: 4 },
