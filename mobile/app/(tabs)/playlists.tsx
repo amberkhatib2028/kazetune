@@ -22,12 +22,11 @@ import { listFriendSummary } from '@/lib/friends';
 import { pickImage, uploadImage } from '@/lib/images';
 import { createPlaylist, listPlaylists, type Playlist } from '@/lib/playlists';
 
-type PlaylistFilter = 'mine' | 'friends' | 'discover' | 'all';
+type PlaylistFilter = 'mine' | 'friends' | 'everyone';
 const PLAYLIST_FILTERS: { key: PlaylistFilter; label: string }[] = [
   { key: 'mine', label: 'Mine' },
   { key: 'friends', label: 'Friends' },
-  { key: 'discover', label: 'Discover' },
-  { key: 'all', label: 'All' },
+  { key: 'everyone', label: 'Everyone' },
 ];
 
 export default function PlaylistsScreen() {
@@ -90,10 +89,10 @@ export default function PlaylistsScreen() {
           return inLibrary(p);
         case 'friends':
           return isFriendPl(p);
-        case 'discover':
-          return p.is_public && !inLibrary(p) && !isFriendPl(p);
-        case 'all':
+        case 'everyone':
         default:
+          // Everything you can see: your library + all public (which
+          // includes friends' and everyone else's public playlists).
           return inLibrary(p) || p.is_public;
       }
     });
