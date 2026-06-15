@@ -105,3 +105,27 @@ export async function clearSpotifyTokens() {
   if (isServer) return;
   await AsyncStorage.removeItem(SPOTIFY_TOKEN_KEY);
 }
+
+// Spotify access tokens expire after ~1 hour. We can't refresh in the
+// app (that needs the client secret), so the `spotify-refresh` Edge
+// Function does it server-side. Returns the new access token (and
+// persists it), or null if there's no refresh token / it failed.
+export async function refreshSpotifyToken(): Promise<string | null> {
+  const tokens = await getSpotifyTokens();
+  if (!tokens?.provider_refresh_token) return null;
+  try {
+    const { data, error } = await supabase.functions.invoke('spotify-refresh', {
+      body: { refresh_token: tokens.provider_refresh_token },
+    });
+    if (error || !data?.access_token) return null;
+    await saveSpotifyTokens({
+      provider_token: data.access_token,
+      // Spotify occasionally rotates the refresh token; keep the old one
+      // if it didn't send a new one.
+      provider_refresh_token: data.refresh_token ?? tokens.provider_refresh_token,
+    });
+    return data.access_token as string;
+  } catch {
+    return null;
+  }
+}

@@ -19,7 +19,7 @@
 // the first available one; if there are none, we surface NO_DEVICE so
 // the UI can tell the user to open Spotify.
 
-import { getSpotifyTokens } from './supabase';
+import { getSpotifyTokens, refreshSpotifyToken } from './supabase';
 import type { Pin } from './pins';
 
 const SPOTIFY_API = 'https://api.spotify.com/v1';
@@ -60,12 +60,12 @@ async function accessToken(): Promise<string> {
 
 // Thin wrapper that maps Spotify's status codes to PlaybackError. The
 // player endpoints return 204 No Content on success and have no body.
-async function playerFetch(
+function rawPlayerFetch(
   path: string,
-  init: { method: string; body?: any } = { method: 'GET' },
-): Promise<any> {
-  const token = await accessToken();
-  const res = await fetch(`${SPOTIFY_API}${path}`, {
+  init: { method: string; body?: any },
+  token: string,
+): Promise<Response> {
+  return fetch(`${SPOTIFY_API}${path}`, {
     method: init.method,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -73,6 +73,20 @@ async function playerFetch(
     },
     body: init.body ? JSON.stringify(init.body) : undefined,
   });
+}
+
+async function playerFetch(
+  path: string,
+  init: { method: string; body?: any } = { method: 'GET' },
+): Promise<any> {
+  const token = await accessToken();
+  let res = await rawPlayerFetch(path, init, token);
+
+  // Token expired — refresh once via the Edge Function and retry.
+  if (res.status === 401) {
+    const fresh = await refreshSpotifyToken();
+    if (fresh) res = await rawPlayerFetch(path, init, fresh);
+  }
 
   if (res.status === 401) {
     throw new PlaybackError('EXPIRED', 'Spotify session expired. Sign in again.');

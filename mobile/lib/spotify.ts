@@ -1,7 +1,7 @@
 // Thin wrapper around Spotify Web API.
 // Uses the provider_token Supabase saved during the OAuth login.
 
-import { getSpotifyTokens } from './supabase';
+import { getSpotifyTokens, refreshSpotifyToken } from './supabase';
 
 const SPOTIFY_API = 'https://api.spotify.com/v1';
 
@@ -30,13 +30,21 @@ async function getAccessToken(): Promise<string> {
 
 async function spotifyFetch(path: string): Promise<any> {
   const token = await getAccessToken();
-  const res = await fetch(`${SPOTIFY_API}${path}`, {
+  let res = await fetch(`${SPOTIFY_API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
+  // Token expired — refresh once via the Edge Function and retry.
   if (res.status === 401) {
-    // Token expired or revoked. We'll handle silent refresh later; for
-    // now ask the user to re-auth.
+    const fresh = await refreshSpotifyToken();
+    if (fresh) {
+      res = await fetch(`${SPOTIFY_API}${path}`, {
+        headers: { Authorization: `Bearer ${fresh}` },
+      });
+    }
+  }
+
+  if (res.status === 401) {
     throw new Error('Spotify session expired. Sign out and sign in again.');
   }
   if (!res.ok) {
