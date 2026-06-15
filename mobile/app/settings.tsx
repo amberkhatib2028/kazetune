@@ -55,6 +55,8 @@ export default function SettingsScreen() {
   const [nameDraft, setNameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
 
+  const [email, setEmail] = useState<string | null>(null);
+
   // Load on mount.
   useEffect(() => {
     let cancelled = false;
@@ -63,12 +65,13 @@ export default function SettingsScreen() {
       if (!sessionData.session) return;
       const { data } = await supabase
         .from('profiles')
-        .select('username, display_name')
+        .select('username, display_name, email')
         .eq('id', sessionData.session.user.id)
         .single();
       if (!cancelled && data) {
         setCurrentUsername(data.username);
         setCurrentName(data.display_name);
+        setEmail(data.email);
       }
     })();
     return () => {
@@ -291,6 +294,25 @@ export default function SettingsScreen() {
               {currentUsername ? 'Change' : 'Set'}
             </Text>
           </Pressable>
+        )}
+
+        {email && (
+          <RNView
+            style={[
+              styles.row,
+              {
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: c.separator,
+              },
+            ]}
+          >
+            <RNView style={styles.rowText}>
+              <Text style={styles.rowTitle}>Email</Text>
+              <Text style={[styles.rowHint, { color: c.textMuted }]}>
+                {email}
+              </Text>
+            </RNView>
+          </RNView>
         )}
       </View>
 

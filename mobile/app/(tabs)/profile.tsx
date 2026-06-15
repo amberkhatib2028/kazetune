@@ -148,11 +148,6 @@ export default function ProfileScreen() {
           </Text>
         </Pressable>
       )}
-      {profile?.email && (
-        <Text style={[styles.email, { color: c.textMuted }]}>
-          {profile.email}
-        </Text>
-      )}
 
       {qrPayload && (
         <RNView style={[styles.qrCard, { backgroundColor: c.card }]}>
