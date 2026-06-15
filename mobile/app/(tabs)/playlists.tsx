@@ -22,18 +22,22 @@ import { listFriendSummary } from '@/lib/friends';
 import { pickImage, uploadImage } from '@/lib/images';
 import { createPlaylist, listPlaylists, type Playlist } from '@/lib/playlists';
 
-type PlaylistFilter = 'mine' | 'friends' | 'everyone';
+// Mine/Friends/Everyone all live inside YOUR LIBRARY (playlists you made
+// or saved), filtered by who made them. Discover is the opposite — public
+// playlists you haven't saved yet, for finding new ones.
+type PlaylistFilter = 'mine' | 'friends' | 'everyone' | 'discover';
 const PLAYLIST_FILTERS: { key: PlaylistFilter; label: string }[] = [
+  { key: 'everyone', label: 'Everyone' },
   { key: 'mine', label: 'Mine' },
   { key: 'friends', label: 'Friends' },
-  { key: 'everyone', label: 'Everyone' },
+  { key: 'discover', label: 'Discover' },
 ];
 
 export default function PlaylistsScreen() {
   const c = useThemeColors();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState<PlaylistFilter>('mine');
+  const [filter, setFilter] = useState<PlaylistFilter>('everyone');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,14 +90,18 @@ export default function PlaylistsScreen() {
     return playlists.filter((p) => {
       switch (filter) {
         case 'mine':
-          return inLibrary(p);
+          // In your library, made by you.
+          return p.is_mine;
         case 'friends':
-          return isFriendPl(p);
+          // In your library (saved), made by a friend.
+          return p.is_saved && isFriendPl(p);
+        case 'discover':
+          // Public playlists you haven't saved (and didn't make).
+          return p.is_public && !inLibrary(p);
         case 'everyone':
         default:
-          // Everything you can see: your library + all public (which
-          // includes friends' and everyone else's public playlists).
-          return inLibrary(p) || p.is_public;
+          // Your whole library — made or saved, from anyone.
+          return inLibrary(p);
       }
     });
   }, [playlists, friendIds, filter]);
@@ -265,9 +273,9 @@ export default function PlaylistsScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={[styles.empty, { color: c.textMuted }]}>
-              {filter === 'mine'
-                ? 'No playlists yet — tap + New, or save one you find.'
-                : 'Nothing here.'}
+              {filter === 'discover'
+                ? 'Nothing new to discover right now.'
+                : 'Nothing here yet — tap + New, or save one from Discover.'}
             </Text>
           }
           renderItem={({ item }) => (
