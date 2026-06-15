@@ -1,7 +1,7 @@
 // Friends tab — search users, manage incoming/outgoing requests,
 // see your accepted friends.
 
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -180,6 +180,7 @@ export default function FriendsScreen() {
               key={r.id}
               user={r}
               busy={busyId === r.id}
+              onOpen={() => router.push(`/user/${r.id}`)}
               onSend={() => handleSend(r.id)}
               onAccept={() => handleAccept(r.id)}
               onRemove={() => handleRemove(r.id)}
@@ -202,6 +203,7 @@ export default function FriendsScreen() {
                   key={s.other_id}
                   summary={s}
                   busy={busyId === s.other_id}
+                  onOpen={() => router.push(`/user/${s.other_id}`)}
                   onAccept={() => handleAccept(s.other_id)}
                   onRemove={() => handleRemove(s.other_id)}
                 />
@@ -223,6 +225,7 @@ export default function FriendsScreen() {
                   key={s.other_id}
                   summary={s}
                   busy={busyId === s.other_id}
+                  onOpen={() => router.push(`/user/${s.other_id}`)}
                   onRemove={() => handleRemove(s.other_id)}
                 />
               ))
@@ -239,6 +242,7 @@ export default function FriendsScreen() {
                   key={s.other_id}
                   summary={s}
                   busy={busyId === s.other_id}
+                  onOpen={() => router.push(`/user/${s.other_id}`)}
                   onRemove={() => handleRemove(s.other_id)}
                 />
               ))}
@@ -257,14 +261,15 @@ export default function FriendsScreen() {
 function SearchRow(props: {
   user: UserSearchResult;
   busy: boolean;
+  onOpen: () => void;
   onSend: () => void;
   onAccept: () => void;
   onRemove: () => void;
 }) {
   const c = useThemeColors();
-  const { user, busy, onSend, onAccept, onRemove } = props;
+  const { user, busy, onOpen, onSend, onAccept, onRemove } = props;
   return (
-    <RNView style={[styles.row, { backgroundColor: c.card }]}>
+    <Pressable style={[styles.row, { backgroundColor: c.card }]} onPress={onOpen}>
       <Avatar uri={user.avatar_url} name={user.display_name} size={40} />
       <RNView style={styles.rowText}>
         <Text style={styles.rowName} numberOfLines={1}>
@@ -308,20 +313,21 @@ function SearchRow(props: {
           </Text>
         </Pressable>
       )}
-    </RNView>
+    </Pressable>
   );
 }
 
 function FriendRow(props: {
   summary: FriendSummary;
   busy: boolean;
+  onOpen: () => void;
   onAccept?: () => void;
   onRemove: () => void;
 }) {
   const c = useThemeColors();
-  const { summary, busy, onAccept, onRemove } = props;
+  const { summary, busy, onOpen, onAccept, onRemove } = props;
   return (
-    <RNView style={[styles.row, { backgroundColor: c.card }]}>
+    <Pressable style={[styles.row, { backgroundColor: c.card }]} onPress={onOpen}>
       <Avatar
         uri={summary.other_avatar_url}
         name={summary.other_display_name}
@@ -360,7 +366,7 @@ function FriendRow(props: {
           </Pressable>
         </RNView>
       )}
-    </RNView>
+    </Pressable>
   );
 }
 

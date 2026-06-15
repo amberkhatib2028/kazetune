@@ -229,6 +229,7 @@ function NavStack() {
           name="add-friend/[username]"
           options={{ presentation: 'modal', title: 'Add friend' }}
         />
+        <Stack.Screen name="user/[id]" options={{ title: 'Profile' }} />
         <Stack.Screen
           name="walk-summary"
           options={{ presentation: 'modal', title: 'Walk' }}

@@ -1,6 +1,7 @@
 // Playlist detail modal — shows the playlist's metadata, its pins in
 // order, and lets the owner remove pins or delete the playlist.
 
+import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -10,6 +11,7 @@ import {
   Image,
   Platform,
   Pressable,
+  Share,
   StyleSheet,
   Switch,
   View as RNView,
@@ -101,6 +103,19 @@ export default function PlaylistDetailScreen() {
       cancelled = true;
     };
   }, [includePublic]);
+
+  const onShare = async () => {
+    if (!playlist) return;
+    const url = Linking.createURL('/playlist-detail', { queryParams: { id } });
+    try {
+      await Share.share({
+        message: `${playlist.title} — a playlist on KazeTune\n${url}`,
+        url,
+      });
+    } catch {
+      // dismissed
+    }
+  };
 
   const removePin = async (pinId: string) => {
     try {
@@ -234,6 +249,14 @@ export default function PlaylistDetailScreen() {
         >
           <Text style={[styles.routeBtnText, { color: c.primary }]}>
             View suggested route
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.routeBtn, { borderColor: c.primary }]}
+          onPress={onShare}
+        >
+          <Text style={[styles.routeBtnText, { color: c.primary }]}>
+            ↗ Share playlist
           </Text>
         </Pressable>
         {walkingMsg && (
