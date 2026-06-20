@@ -1,13 +1,27 @@
 // Sign-in screen — only entry point when there's no Supabase session.
 // A sunset-gradient hero with a single "Sign in with Spotify" button.
+//
+// KazeTune is Premium-exclusive: if the signed-in Spotify account isn't
+// Premium, we never establish a session and instead show a friendly
+// "Premium required" state (see PremiumRequiredError).
 
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 
 import { SunsetGradient } from '@/components/Gradient';
-import { createSessionFromUrl, supabase } from '@/lib/supabase';
+import {
+  createSessionFromUrl,
+  PremiumRequiredError,
+  supabase,
+} from '@/lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -17,10 +31,13 @@ const SPOTIFY_SCOPES =
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  // Set when sign-in succeeded but the account isn't Spotify Premium.
+  const [needsPremium, setNeedsPremium] = useState(false);
 
   const signInWithSpotify = async () => {
     try {
       setErrorText(null);
+      setNeedsPremium(false);
       setLoading(true);
       // Force the app's deep link scheme. Without this, makeRedirectUri()
       // in a dev build can return the Expo dev server URL (e.g.
@@ -40,11 +57,47 @@ export default function LoginScreen() {
         await createSessionFromUrl(result.url);
       }
     } catch (err: any) {
-      setErrorText(err?.message ?? 'Sign in failed');
+      if (err instanceof PremiumRequiredError) {
+        setNeedsPremium(true);
+      } else {
+        setErrorText(err?.message ?? 'Sign in failed');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (needsPremium) {
+    return (
+      <SunsetGradient
+        style={styles.container}
+        colors={['#FFC9A9', '#FF8FA3', '#C89BE0']}
+      >
+        <Text style={styles.premiumEmoji}>🎧</Text>
+        <Text style={styles.premiumTitle}>Premium required</Text>
+        <Text style={styles.premiumBody}>
+          KazeTune plays full songs at the exact moment you pin them — and
+          that only works with Spotify Premium.
+        </Text>
+        <Text style={styles.premiumBody}>
+          Upgrade your Spotify account, then come back and sign in.
+        </Text>
+
+        <Pressable
+          style={styles.button}
+          onPress={() => Linking.openURL('https://www.spotify.com/premium/')}
+        >
+          <Text style={styles.buttonText}>Get Spotify Premium</Text>
+        </Pressable>
+        <Pressable
+          style={styles.secondaryButton}
+          onPress={() => setNeedsPremium(false)}
+        >
+          <Text style={styles.secondaryButtonText}>I have Premium — try again</Text>
+        </Pressable>
+      </SunsetGradient>
+    );
+  }
 
   return (
     <SunsetGradient
@@ -65,6 +118,8 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Sign in with Spotify</Text>
         )}
       </Pressable>
+
+      <Text style={styles.premiumNote}>Spotify Premium required</Text>
 
       {errorText && <Text style={styles.error}>{errorText}</Text>}
     </SunsetGradient>
@@ -111,10 +166,43 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { fontSize: 16, fontWeight: '700', color: '#FF6F91' },
+  premiumNote: {
+    marginTop: 14,
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+  },
   error: {
     marginTop: 16,
     textAlign: 'center',
     color: '#fff',
     fontWeight: '600',
+  },
+
+  premiumEmoji: { fontSize: 64, marginBottom: 4 },
+  premiumTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+    textShadowColor: 'rgba(120,60,90,0.25)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  premiumBody: {
+    fontSize: 16,
+    lineHeight: 23,
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.95)',
+    maxWidth: 320,
+  },
+  secondaryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+    textDecorationLine: 'underline',
   },
 });

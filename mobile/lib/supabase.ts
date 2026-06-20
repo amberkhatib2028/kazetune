@@ -37,6 +37,35 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// KazeTune is a Premium-exclusive app: full-track playback (its whole
+// point) only works on Spotify Premium. We gate at login so non-Premium
+// users get a clear explanation instead of an app that silently fails to
+// play anything. Thrown from createSessionFromUrl before a session is
+// ever established, so login.tsx can show the right screen.
+export class PremiumRequiredError extends Error {
+  constructor() {
+    super('Spotify Premium required');
+    this.name = 'PremiumRequiredError';
+  }
+}
+
+// Read the account tier from Spotify's profile endpoint. `product` is
+// 'premium' | 'free' | 'open'. Returns null on any failure so callers
+// can fail OPEN — we never want a flaky network to lock out a real
+// Premium user. Requires the `user-read-private` scope (we request it).
+export async function fetchSpotifyProduct(token: string): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data?.product === 'string' ? data.product : null;
+  } catch {
+    return null;
+  }
+}
+
 // After OAuth, Supabase redirects back with the access/refresh tokens in
 // the URL hash: kazetune://#access_token=...&refresh_token=...
 // Parse them out, capture the Spotify provider tokens (so we can call
@@ -65,6 +94,14 @@ export async function createSessionFromUrl(url: string) {
   const provider_refresh_token = params.get('provider_refresh_token');
   console.log('[oauth callback] provider_token present?', !!provider_token);
   if (provider_token) {
+    // Premium gate: verify the tier BEFORE establishing a session, so a
+    // non-Premium user is never signed in (no flash into a broken app).
+    // Fails open — only an explicit non-premium answer blocks.
+    const product = await fetchSpotifyProduct(provider_token);
+    if (product && product !== 'premium') {
+      await clearSpotifyTokens();
+      throw new PremiumRequiredError();
+    }
     await saveSpotifyTokens({ provider_token, provider_refresh_token });
   }
 

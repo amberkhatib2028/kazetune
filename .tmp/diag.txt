@@ -1,0 +1,8 @@
+---
+total 0
+drwxr-xr-x@ 3 amberkhatib  wheel  96 Jun 20 02:51 ./
+drwxr-xr-x@ 3 amberkhatib  wheel  96 Jun 20 02:11 ../
+-rw-r--r--@ 1 amberkhatib  wheel   0 Jun 20 02:51 bl0ocwt0c.output
+---df tasks---
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk1s1   466Gi   249Gi   194Gi    57%    1.5M  2.0G    0%   /System/Volumes/Data
