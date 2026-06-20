@@ -57,11 +57,21 @@ export default function HowItWorksScreen() {
       ))}
 
       <View style={[styles.note, { backgroundColor: c.card }]}>
-        <Text style={styles.noteTitle}>A heads up about audio</Text>
+        <Text style={styles.noteTitle}>🎧 Playback needs Spotify Premium</Text>
         <Text style={[styles.noteBody, { color: c.textMuted }]}>
-          Spotify removed audio previews from a lot of tracks in 2024.
-          If a pin shows "(no preview)", the geofence still fires — there's
-          just nothing to play.
+          KazeTune plays the real, full song at the exact moment you pinned
+          it — which only Spotify Premium allows. That's why Premium is
+          required to use the app.
+        </Text>
+      </View>
+
+      <View style={[styles.note, { backgroundColor: c.card }]}>
+        <Text style={styles.noteTitle}>📲 Keep Spotify open to hear clips</Text>
+        <Text style={[styles.noteBody, { color: c.textMuted }]}>
+          KazeTune plays through your Spotify app. Open Spotify and play (then
+          pause) anything once so it becomes the active device — then clips
+          will play here and on your walks. If nothing plays, that's almost
+          always the fix.
         </Text>
       </View>
 
