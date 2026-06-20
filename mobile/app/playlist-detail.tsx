@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
+import { promptReport } from '@/lib/moderation';
 import { listPins, type Pin } from '@/lib/pins';
 import {
   deletePlaylist,
@@ -294,6 +295,17 @@ export default function PlaylistDetailScreen() {
             </Text>
           </Pressable>
         )}
+        {!playlist.is_mine && (
+          <Pressable
+            style={styles.reportBtn}
+            onPress={() => promptReport('playlist', id, 'playlist')}
+            hitSlop={8}
+          >
+            <Text style={[styles.reportText, { color: c.textMuted }]}>
+              ⚑ Report playlist
+            </Text>
+          </Pressable>
+        )}
         {walkingMsg && (
           <Text style={[styles.walkMsg, { color: c.textMuted }]}>
             {walkingMsg}
@@ -490,6 +502,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   routeBtnText: { fontWeight: '600' },
+  reportBtn: { marginTop: 12, paddingVertical: 6, alignItems: 'center' },
+  reportText: { fontSize: 13, fontWeight: '600' },
   walkMsg: { fontSize: 12, marginTop: 6 },
 
   nowPlaying: {

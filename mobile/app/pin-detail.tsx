@@ -30,6 +30,7 @@ import {
   stopPinClip,
 } from '@/lib/spotifyPlayback';
 import { listPins, type Pin, type PinVisibility } from '@/lib/pins';
+import { promptReport } from '@/lib/moderation';
 import { supabase } from '@/lib/supabase';
 
 export default function PinDetailScreen() {
@@ -341,6 +342,16 @@ export default function PinDetailScreen() {
         </Text>
       </Pressable>
 
+      {!pin.is_mine && (
+        <Pressable
+          style={styles.reportButton}
+          onPress={() => promptReport('pin', pin.id, 'pin')}
+          hitSlop={8}
+        >
+          <Text style={[styles.reportText, { color: c.textMuted }]}>⚑ Report pin</Text>
+        </Pressable>
+      )}
+
       {pin.is_mine && pin.visibility === 'private' && (
         <Text style={[styles.shareHint, { color: c.textSubtle }]}>
           Private — only you can open this. Choose who can see it below.
@@ -473,6 +484,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   buttonText: { fontWeight: '600' },
+
+  reportButton: { marginTop: 18, paddingVertical: 6 },
+  reportText: { fontSize: 13, fontWeight: '600' },
 
   notFound: { fontSize: 16 },
   disabled: { opacity: 0.4 },

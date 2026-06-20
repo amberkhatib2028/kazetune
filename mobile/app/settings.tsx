@@ -496,6 +496,22 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      {/* ---- Safety ------------------------------------------------- */}
+      <Text style={[styles.sectionLabel, { color: c.textMuted, marginTop: 32 }]}>
+        Safety
+      </Text>
+      <View style={[styles.group, { backgroundColor: c.card }]}>
+        <Pressable style={styles.row} onPress={() => router.push('/blocked')}>
+          <RNView style={styles.rowText}>
+            <Text style={styles.rowTitle}>Blocked accounts</Text>
+            <Text style={[styles.rowHint, { color: c.textMuted }]}>
+              People you've blocked. Tap to manage.
+            </Text>
+          </RNView>
+          <Text style={[styles.linkBtn, { color: c.primary }]}>›</Text>
+        </Pressable>
+      </View>
+
       {/* ---- Account actions --------------------------------------- */}
       <View style={[styles.group, { backgroundColor: c.card, marginTop: 32 }]}>
         <Pressable style={styles.row} onPress={confirmSignOut}>

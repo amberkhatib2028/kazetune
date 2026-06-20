@@ -51,6 +51,7 @@ const ORDER = [
   'saved_playlists_migration.sql',
   'friendship_accepted_at_migration.sql',
   'delete_account_rpc.sql',
+  'moderation_migration.sql',
 ];
 
 function loadEnvValue(key) {

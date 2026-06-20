@@ -26,10 +26,17 @@ import {
   sendFriendRequest,
   type FriendshipStatus,
 } from '@/lib/friends';
+import {
+  blockUser,
+  listBlockedUsers,
+  promptReport,
+  unblockUser,
+} from '@/lib/moderation';
 import { useNotifications } from '@/lib/notifications';
 import { listPins, type Pin } from '@/lib/pins';
 import { listPlaylists, type Playlist } from '@/lib/playlists';
 import { supabase } from '@/lib/supabase';
+import { Alert } from 'react-native';
 
 type Profile = {
   id: string;
@@ -50,6 +57,7 @@ export default function UserProfileScreen() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -58,22 +66,25 @@ export default function UserProfileScreen() {
       } = await supabase.auth.getUser();
       setIsMe(user?.id === id);
 
-      const [{ data: prof }, summary, allPins, allPlaylists] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, display_name, username, avatar_url')
-          .eq('id', id)
-          .single(),
-        listFriendSummary().catch(() => []),
-        listPins().catch(() => []),
-        listPlaylists().catch(() => []),
-      ]);
+      const [{ data: prof }, summary, allPins, allPlaylists, blockedList] =
+        await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, display_name, username, avatar_url')
+            .eq('id', id)
+            .single(),
+          listFriendSummary().catch(() => []),
+          listPins().catch(() => []),
+          listPlaylists().catch(() => []),
+          listBlockedUsers().catch(() => []),
+        ]);
 
       setProfile((prof as Profile) ?? null);
       const fr = summary.find((s) => s.other_id === id);
       setStatus(fr ? fr.status : 'none');
       setPins(allPins.filter((p) => p.user_id === id));
       setPlaylists(allPlaylists.filter((pl) => pl.user_id === id));
+      setBlocked(blockedList.some((b) => b.id === id));
     } finally {
       setLoading(false);
     }
@@ -113,6 +124,53 @@ export default function UserProfileScreen() {
     }
   };
 
+  const onReport = () => promptReport('profile', id, 'person');
+
+  const onToggleBlock = () => {
+    if (blocked) {
+      (async () => {
+        try {
+          setBusy(true);
+          await unblockUser(id);
+          setBlocked(false);
+          load();
+        } catch (e: any) {
+          Alert.alert('Could not unblock', e?.message ?? String(e));
+        } finally {
+          setBusy(false);
+        }
+      })();
+      return;
+    }
+    const who = profile?.username ? `@${profile.username}` : profile?.display_name ?? 'this person';
+    Alert.alert(
+      `Block ${who}?`,
+      "You won't see each other's pins, playlists, or profiles, and you'll be removed as friends.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setBusy(true);
+              await blockUser(id);
+              setBlocked(true);
+              setStatus('none');
+              setPins([]);
+              setPlaylists([]);
+              refreshBadge();
+            } catch (e: any) {
+              Alert.alert('Could not block', e?.message ?? String(e));
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -146,7 +204,7 @@ export default function UserProfileScreen() {
         <Text style={[styles.username, { color: c.primary }]}>@{profile.username}</Text>
       )}
 
-      {!isMe && (
+      {!isMe && !blocked && (
         <Pressable
           style={[
             styles.friendBtn,
@@ -173,13 +231,35 @@ export default function UserProfileScreen() {
         </Pressable>
       )}
 
-      <Pressable
-        style={[styles.shareBtn, { backgroundColor: c.secondaryButton }]}
-        onPress={onShare}
-      >
-        <Text style={[styles.shareBtnText, { color: c.text }]}>↗ Share profile</Text>
-      </Pressable>
+      {!blocked && (
+        <Pressable
+          style={[styles.shareBtn, { backgroundColor: c.secondaryButton }]}
+          onPress={onShare}
+        >
+          <Text style={[styles.shareBtnText, { color: c.text }]}>↗ Share profile</Text>
+        </Pressable>
+      )}
 
+      {!isMe && (
+        <RNView style={styles.modRow}>
+          <Pressable onPress={onReport} hitSlop={8}>
+            <Text style={[styles.modText, { color: c.textMuted }]}>⚑ Report</Text>
+          </Pressable>
+          <Text style={[styles.modDot, { color: c.textSubtle }]}>·</Text>
+          <Pressable onPress={onToggleBlock} hitSlop={8} disabled={busy}>
+            <Text style={[styles.modText, { color: c.danger }]}>
+              {blocked ? 'Unblock' : 'Block'}
+            </Text>
+          </Pressable>
+        </RNView>
+      )}
+
+      {blocked ? (
+        <Text style={[styles.blockedNote, { color: c.textSubtle }]}>
+          You blocked this person. Their pins and playlists are hidden.
+        </Text>
+      ) : (
+        <>
       {/* ---- Pins ---- */}
       <Text style={[styles.sectionLabel, { color: c.textMuted }]}>
         Pins ({pins.length})
@@ -236,6 +316,8 @@ export default function UserProfileScreen() {
           ))}
         </>
       )}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -263,6 +345,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareBtnText: { fontWeight: '600', fontSize: 14 },
+  modRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+  },
+  modText: { fontSize: 13, fontWeight: '600' },
+  modDot: { fontSize: 13 },
+  blockedNote: {
+    marginTop: 28,
+    fontSize: 14,
+    textAlign: 'center',
+    maxWidth: 280,
+    lineHeight: 20,
+  },
   sectionLabel: {
     alignSelf: 'flex-start',
     fontSize: 12,

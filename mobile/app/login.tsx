@@ -28,6 +28,11 @@ WebBrowser.maybeCompleteAuthSession();
 const SPOTIFY_SCOPES =
   'user-read-email user-read-private streaming user-modify-playback-state user-read-playback-state user-read-currently-playing';
 
+// Hosted legal docs. Required for App Store review (EULA + privacy
+// policy). Update these to the live URLs before submission.
+const TERMS_URL = 'https://kazetune.app/terms';
+const PRIVACY_URL = 'https://kazetune.app/privacy';
+
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -122,6 +127,18 @@ export default function LoginScreen() {
       <Text style={styles.premiumNote}>Spotify Premium required</Text>
 
       {errorText && <Text style={styles.error}>{errorText}</Text>}
+
+      <Text style={styles.agreement}>
+        By signing in you agree to our{' '}
+        <Text style={styles.agreementLink} onPress={() => Linking.openURL(TERMS_URL)}>
+          Terms of Use
+        </Text>{' '}
+        (no objectionable content or abusive behavior) and{' '}
+        <Text style={styles.agreementLink} onPress={() => Linking.openURL(PRIVACY_URL)}>
+          Privacy Policy
+        </Text>
+        .
+      </Text>
     </SunsetGradient>
   );
 }
@@ -177,6 +194,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#fff',
     fontWeight: '600',
+  },
+  agreement: {
+    position: 'absolute',
+    bottom: 40,
+    left: 32,
+    right: 32,
+    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 18,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  agreementLink: {
+    fontWeight: '700',
+    color: '#fff',
+    textDecorationLine: 'underline',
   },
 
   premiumEmoji: { fontSize: 64, marginBottom: 4 },
