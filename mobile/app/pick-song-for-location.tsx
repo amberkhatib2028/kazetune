@@ -185,6 +185,11 @@ export default function PickSongForLocationScreen() {
             </Text>
           ) : null
         }
+        ListFooterComponent={
+          results.length > 0 ? (
+            <Text style={styles.attribution}>Search powered by Spotify</Text>
+          ) : null
+        }
       />
     </View>
   );
@@ -239,4 +244,11 @@ const styles = StyleSheet.create({
   artist: { fontSize: 14, marginTop: 2 },
   duration: { fontSize: 12, marginLeft: 8 },
   empty: { textAlign: 'center', marginTop: 32 },
+  attribution: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1DB954',
+  },
 });

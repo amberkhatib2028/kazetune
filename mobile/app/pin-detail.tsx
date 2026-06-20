@@ -22,7 +22,7 @@ import { Avatar } from '@/components/Avatar';
 import { ClipPreview } from '@/components/ClipPreview';
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { VisibilitySelector } from '@/components/VisibilitySelector';
-import { getTrack } from '@/lib/spotify';
+import { getTrack, openTrackInSpotify } from '@/lib/spotify';
 import {
   PlaybackError,
   getCurrentPinId,
@@ -32,6 +32,9 @@ import {
 import { listPins, type Pin, type PinVisibility } from '@/lib/pins';
 import { promptReport } from '@/lib/moderation';
 import { supabase } from '@/lib/supabase';
+
+// Spotify brand green, per Spotify's design guidelines.
+const SPOTIFY_GREEN = '#1DB954';
 
 export default function PinDetailScreen() {
   const c = useThemeColors();
@@ -342,6 +345,15 @@ export default function PinDetailScreen() {
         </Text>
       </Pressable>
 
+      <Pressable
+        style={[styles.spotifyButton, { borderColor: SPOTIFY_GREEN }]}
+        onPress={() => openTrackInSpotify(pin.spotify_track_id)}
+      >
+        <Text style={[styles.spotifyButtonText, { color: SPOTIFY_GREEN }]}>
+          Open in Spotify
+        </Text>
+      </Pressable>
+
       {!pin.is_mine && (
         <Pressable
           style={styles.reportButton}
@@ -484,6 +496,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   buttonText: { fontWeight: '600' },
+
+  spotifyButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  spotifyButtonText: { fontWeight: '700' },
 
   reportButton: { marginTop: 18, paddingVertical: 6 },
   reportText: { fontSize: 13, fontWeight: '600' },

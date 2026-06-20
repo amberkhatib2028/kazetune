@@ -1,6 +1,8 @@
 // Thin wrapper around Spotify Web API.
 // Uses the provider_token Supabase saved during the OAuth login.
 
+import { Linking } from 'react-native';
+
 import { getSpotifyTokens, refreshSpotifyToken } from './supabase';
 
 const SPOTIFY_API = 'https://api.spotify.com/v1';
@@ -58,6 +60,17 @@ async function spotifyFetch(path: string): Promise<any> {
  *  when editing a pin (pins don't store duration_ms). */
 export async function getTrack(id: string): Promise<SpotifyTrack> {
   return (await spotifyFetch(`/tracks/${id}`)) as SpotifyTrack;
+}
+
+/** The canonical Spotify URL for a track. Opens the Spotify app if it's
+ *  installed (universal link), otherwise the Spotify web player. Used for
+ *  the "Open in Spotify" attribution Spotify's guidelines require. */
+export function spotifyTrackUrl(id: string): string {
+  return `https://open.spotify.com/track/${id}`;
+}
+
+export async function openTrackInSpotify(id: string): Promise<void> {
+  await Linking.openURL(spotifyTrackUrl(id));
 }
 
 export async function searchTracks(query: string): Promise<SpotifyTrack[]> {

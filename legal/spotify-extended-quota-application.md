@@ -83,26 +83,23 @@ Guidelines**. Confirm each of these is true of KazeTune:
       full music catalog independently of Spotify; it's a
       location/discovery layer on top of the user's Spotify.
 - [x] **No synchronization with video / no use as a sync-licensing tool.**
-- [ ] **Attribution & "Open in Spotify"** — Spotify requires you to
-      attribute Spotify and link back to the content on Spotify. **Action
-      item:** make sure track/album displays credit Spotify and offer a
-      way to open the track in Spotify (e.g. an "Open in Spotify" link on
-      the pin detail screen, and Spotify branding where tracks appear).
-      *(See follow-up task below — this may need a small code change before
-      you submit.)*
-- [ ] **Spotify branding/logos** used per the Design Guidelines (correct
-      logo, color, clear space) on the login button and track displays.
+- [x] **Attribution & "Open in Spotify"** — the pin detail screen has an
+      "Open in Spotify" action that links back to the track
+      (`https://open.spotify.com/track/{id}`), and the track-search
+      screens show a "Search powered by Spotify" attribution in Spotify
+      green.
+- [ ] **Spotify branding/logos** — *recommended polish:* swap the plain
+      text attribution / login button for the official Spotify logo per
+      the Design Guidelines (correct logo asset, color, and clear space).
+      Text attribution is in place now; the official logo is a nice-to-have
+      that further strengthens the submission.
 
-### Likely follow-up code task before submitting
+### Optional polish before submitting
 
-To fully satisfy attribution, we should add to the app:
-1. An **"Open in Spotify"** action on the pin detail screen (deep link
-   `https://open.spotify.com/track/{id}` or `spotify:track:{id}`).
-2. **"Powered by Spotify"** / Spotify logo near where track metadata is
-   shown, per the Design Guidelines.
-
-Ask Claude to implement these when you're ready — they're small and make
-the application much stronger.
+The functional attribution requirements are met. For an even stronger
+submission you can later add the official Spotify logo (instead of plain
+text) on the login button and next to track metadata, following Spotify's
+Design Guidelines for logo usage.
 
 ---
 
