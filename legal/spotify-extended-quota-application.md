@@ -50,11 +50,12 @@ Authorization Code flow + Web API endpoints), used from a React Native
 - **Get Current User's Profile** (`/v1/me`) — to confirm the account is
   Premium (KazeTune is Premium-only) and to populate the user's profile.
 
-**Is your app commercial?** [Choose what's accurate — e.g. "Not currently
-monetized; may add a subscription later."]
+**Is your app commercial?** Not currently — KazeTune is free and not
+monetized. We may introduce a subscription in the future, but there is no
+commercial offering today.
 
-**How many users do you expect?** [Give a realistic estimate, e.g.
-"Initially a few hundred; potentially scaling to several thousand."]
+**How many users do you expect?** Initially up to a few hundred (friends,
+classmates, and early testers).
 
 ---
 
