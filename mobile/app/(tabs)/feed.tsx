@@ -21,45 +21,114 @@ import {
   listFriendActivity,
   type FriendActivityItem,
 } from '@/lib/friends';
+import { listDiscover } from '@/lib/discover';
+import { type Pin } from '@/lib/pins';
+import { type Playlist } from '@/lib/playlists';
+
+type FeedMode = 'friends' | 'discover';
+
+// Unified shape so Discover can render pins and playlists in one list.
+type DiscoverRow = {
+  kind: 'pin' | 'playlist';
+  id: string;
+  title: string;
+  sub: string;
+  image: string | null;
+};
 
 export default function FeedScreen() {
   const c = useThemeColors();
+  const [mode, setMode] = useState<FeedMode>('friends');
   const [items, setItems] = useState<FriendActivityItem[]>([]);
+  const [discover, setDiscover] = useState<DiscoverRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (m: FeedMode) => {
     try {
       setError(null);
-      setItems(await listFriendActivity());
+      if (m === 'friends') {
+        setItems(await listFriendActivity());
+      } else {
+        const { pins, playlists } = await listDiscover();
+        const rows: DiscoverRow[] = [
+          ...pins.map((p: Pin) => ({
+            kind: 'pin' as const,
+            id: p.id,
+            title: p.track_name,
+            sub: `${p.artist_name}${p.place_name ? ` · ${p.place_name}` : ''}`,
+            image: p.image_url ?? p.album_image_url,
+          })),
+          ...playlists.map((pl: Playlist) => ({
+            kind: 'playlist' as const,
+            id: pl.id,
+            title: pl.title,
+            sub: `Playlist · ${pl.pin_count} pin${pl.pin_count === 1 ? '' : 's'}${
+              pl.owner_display_name ? ` · ${pl.owner_display_name}` : ''
+            }`,
+            image: pl.cover_image_url,
+          })),
+        ];
+        setDiscover(rows);
+      }
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load activity');
+      setError(e?.message ?? 'Failed to load');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => { load(mode); }, [load, mode]));
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    load();
-  }, [load]);
+    load(mode);
+  }, [load, mode]);
+
+  const switchMode = (m: FeedMode) => {
+    if (m === mode) return;
+    setLoading(true);
+    setMode(m);
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Feed</Text>
         <Text style={[styles.subtitle, { color: c.textMuted }]}>
-          What your friends have been pinning.
+          {mode === 'friends'
+            ? 'What your friends have been pinning.'
+            : 'Public pins & playlists from around KazeTune.'}
         </Text>
       </View>
 
-      {loading && items.length === 0 ? (
+      <RNView style={[styles.segment, { backgroundColor: c.card }]}>
+        {(['friends', 'discover'] as FeedMode[]).map((m) => (
+          <Pressable
+            key={m}
+            style={[
+              styles.segmentBtn,
+              mode === m && { backgroundColor: c.primary },
+            ]}
+            onPress={() => switchMode(m)}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                { color: mode === m ? c.primaryText : c.textMuted },
+              ]}
+            >
+              {m === 'friends' ? 'Friends' : 'Discover'}
+            </Text>
+          </Pressable>
+        ))}
+      </RNView>
+
+      {loading ? (
         <ActivityIndicator color={c.text} style={{ marginTop: 32 }} />
-      ) : (
+      ) : mode === 'friends' ? (
         <FlatList
           data={items}
           keyExtractor={(it) => `${it.kind}-${it.id}`}
@@ -86,6 +155,58 @@ export default function FeedScreen() {
               textMuted={c.textMuted}
               textSubtle={c.textSubtle}
             />
+          )}
+        />
+      ) : (
+        <FlatList
+          data={discover}
+          keyExtractor={(it) => `${it.kind}-${it.id}`}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={c.text}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="safari"
+              title="Nothing to discover yet"
+              subtitle="Public pins and playlists from other people will show up here."
+            />
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              style={[styles.row, { backgroundColor: c.card }]}
+              onPress={() =>
+                router.push({
+                  pathname: item.kind === 'pin' ? '/pin-detail' : '/playlist-detail',
+                  params: { id: item.id },
+                })
+              }
+            >
+              {item.image ? (
+                <Image source={{ uri: item.image }} style={styles.thumb} />
+              ) : (
+                <RNView style={[styles.thumb, { backgroundColor: c.primary }]}>
+                  <Text style={styles.thumbLetter}>
+                    {item.title.charAt(0).toUpperCase()}
+                  </Text>
+                </RNView>
+              )}
+              <RNView style={styles.rowText}>
+                <Text style={styles.rowName} numberOfLines={1}>
+                  <Text style={styles.rowNameBold}>{item.title}</Text>
+                </Text>
+                <Text
+                  style={[styles.rowSub, { color: c.textMuted }]}
+                  numberOfLines={1}
+                >
+                  {item.sub}
+                </Text>
+              </RNView>
+            </Pressable>
           )}
         />
       )}
@@ -192,6 +313,20 @@ const styles = StyleSheet.create({
   header: { marginBottom: 12 },
   title: { fontSize: 24, fontWeight: '700' },
   subtitle: { fontSize: 12, marginTop: 2 },
+
+  segment: {
+    flexDirection: 'row',
+    borderRadius: 22,
+    padding: 4,
+    marginBottom: 12,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 18,
+    alignItems: 'center',
+  },
+  segmentText: { fontWeight: '700', fontSize: 14 },
 
   list: { paddingBottom: 32, gap: 8, flexGrow: 1 },
 
