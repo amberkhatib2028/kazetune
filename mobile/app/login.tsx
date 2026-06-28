@@ -81,7 +81,7 @@ export default function LoginScreen() {
         <Text style={styles.premiumEmoji}>🎧</Text>
         <Text style={styles.premiumTitle}>Premium required</Text>
         <Text style={styles.premiumBody}>
-          KazeTune plays full songs at the exact moment you pin them — and
+          KazeTune plays full songs at the exact moment you pin them—and
           that only works with Spotify Premium.
         </Text>
         <Text style={styles.premiumBody}>
@@ -98,7 +98,7 @@ export default function LoginScreen() {
           style={styles.secondaryButton}
           onPress={() => setNeedsPremium(false)}
         >
-          <Text style={styles.secondaryButtonText}>I have Premium — try again</Text>
+          <Text style={styles.secondaryButtonText}>I have Premium—try again</Text>
         </Pressable>
       </SunsetGradient>
     );

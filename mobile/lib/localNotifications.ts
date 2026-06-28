@@ -44,8 +44,8 @@ export async function notifyPinNearby(pin: {
       content: {
         title: `🎵 ${pin.track_name}`,
         body: pin.place_name
-          ? `Now playing — you're at ${pin.place_name}`
-          : 'Now playing — a pin near you',
+          ? `Now playing—you're at ${pin.place_name}`
+          : 'Now playing—a pin near you',
       },
       trigger: null, // immediate
     });

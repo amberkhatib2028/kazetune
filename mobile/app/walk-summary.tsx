@@ -116,7 +116,7 @@ export default function WalkSummaryScreen() {
         </Text>
         {walk.collectedPins.length === 0 ? (
           <Text style={[styles.emptyText, { color: c.textMuted }]}>
-            None this walk — get a little closer next time.
+            None this walk—get a little closer next time.
           </Text>
         ) : (
           walk.collectedPins.map((p) => (

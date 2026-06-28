@@ -153,7 +153,7 @@ export default function AllPinsScreen() {
                 mode === 'mine'
                   ? 'Search a track and drop your first pin.'
                   : mode === 'friends'
-                  ? "No pins from friends yet — add some, or wait for them to drop pins."
+                  ? "No pins from friends yet—add some, or wait for them to drop pins."
                   : 'No pins to show.'
               }
             />

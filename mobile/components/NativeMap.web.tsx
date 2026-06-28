@@ -75,7 +75,7 @@ export default function NativeMapWeb() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={[styles.empty, { color: c.textMuted }]}>
-              No pins yet — go to Search, pick a track, and save one.
+              No pins yet—go to Search, pick a track, and save one.
             </Text>
           }
           renderItem={({ item }) => (
@@ -99,7 +99,7 @@ export default function NativeMapWeb() {
                   style={[styles.rowSub, { color: c.textMuted }]}
                   numberOfLines={1}
                 >
-                  {item.track_name} — {item.artist_name}
+                  {item.track_name}—{item.artist_name}
                 </Text>
                 <Text style={[styles.rowCoords, { color: c.textSubtle }]}>
                   {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}

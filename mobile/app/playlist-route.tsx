@@ -90,7 +90,7 @@ export default function PlaylistRouteScreen() {
     return (
       <View style={styles.center}>
         <Text style={[styles.empty, { color: c.textMuted }]}>
-          Empty playlist — add pins first.
+          Empty playlist—add pins first.
         </Text>
       </View>
     );

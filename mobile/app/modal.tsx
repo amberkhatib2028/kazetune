@@ -60,7 +60,7 @@ export default function HowItWorksScreen() {
         <Text style={styles.noteTitle}>🎧 Playback needs Spotify Premium</Text>
         <Text style={[styles.noteBody, { color: c.textMuted }]}>
           KazeTune plays the real, full song at the exact moment you pinned
-          it — which only Spotify Premium allows. That's why Premium is
+          it—which only Spotify Premium allows. That's why Premium is
           required to use the app.
         </Text>
       </View>
@@ -69,7 +69,7 @@ export default function HowItWorksScreen() {
         <Text style={styles.noteTitle}>📲 Keep Spotify open to hear clips</Text>
         <Text style={[styles.noteBody, { color: c.textMuted }]}>
           KazeTune plays through your Spotify app. Open Spotify and play (then
-          pause) anything once so it becomes the active device — then clips
+          pause) anything once so it becomes the active device—then clips
           will play here and on your walks. If nothing plays, that's almost
           always the fix.
         </Text>

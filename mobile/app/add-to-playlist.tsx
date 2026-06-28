@@ -61,7 +61,7 @@ export default function AddToPlaylistScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <Text style={[styles.empty, { color: c.textMuted }]}>
-            You don't have any playlists yet — make one in the Playlists tab first.
+            You don't have any playlists yet—make one in the Playlists tab first.
           </Text>
         }
         renderItem={({ item }) => (

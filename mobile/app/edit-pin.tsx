@@ -134,7 +134,7 @@ export default function EditPinScreen() {
     } else if (reason === 'PREMIUM_REQUIRED') {
       setPreviewMsg('Previewing the clip needs Spotify Premium.');
     } else if (reason === 'EXPIRED' || reason === 'NO_TOKEN') {
-      setPreviewMsg('Spotify session expired — sign in again to preview.');
+      setPreviewMsg('Spotify session expired—sign in again to preview.');
     } else {
       setPreviewMsg((e as any)?.message ?? 'Could not preview this clip.');
     }
@@ -311,7 +311,7 @@ export default function EditPinScreen() {
 
       <Text style={styles.section}>Photo</Text>
       <Text style={[styles.hint, { color: c.textSubtle }]}>
-        Defaults to the album cover — tap to use your own.
+        Defaults to the album cover—tap to use your own.
       </Text>
       <Pressable
         style={[
@@ -372,7 +372,7 @@ export default function EditPinScreen() {
 
       <Text style={styles.section}>Clip</Text>
       <Text style={[styles.hint, { color: c.textSubtle }]}>
-        Drag to choose the part that plays here — {MIN_CLIP_SEC}–{MAX_CLIP_SEC}s.
+        Drag to choose the part that plays here—{MIN_CLIP_SEC}–{MAX_CLIP_SEC}s.
       </Text>
       {trackDurationSec > 0 && (
         <ClipRangeSlider

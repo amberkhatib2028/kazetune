@@ -168,7 +168,7 @@ export default function SettingsScreen() {
       Alert.alert(
         'Could not set username',
         e?.message ??
-          'Try a different one — 3-30 lowercase letters, numbers, or _.',
+          'Try a different one—3-30 lowercase letters, numbers, or _.',
       );
     } finally {
       setSavingUsername(false);
@@ -397,7 +397,7 @@ export default function SettingsScreen() {
                   Include public during playlist walks
                 </Text>
                 <Text style={[styles.rowHint, { color: c.textMuted }]}>
-                  Default for playlist walks — you can flip it per walk when
+                  Default for playlist walks—you can flip it per walk when
                   you tap "Walk this playlist".
                 </Text>
               </RNView>

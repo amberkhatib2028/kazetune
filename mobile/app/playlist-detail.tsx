@@ -130,7 +130,7 @@ export default function PlaylistDetailScreen() {
     const url = Linking.createURL('/playlist-detail', { queryParams: { id } });
     try {
       await Share.share({
-        message: `${playlist.title} — a playlist on KazeTune\n${url}`,
+        message: `${playlist.title}—a playlist on KazeTune\n${url}`,
         url,
       });
     } catch {

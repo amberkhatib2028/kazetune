@@ -217,7 +217,7 @@ export default function FriendsScreen() {
             </Text>
             {accepted.length === 0 ? (
               <Text style={[styles.empty, { color: c.textMuted }]}>
-                None yet — search above to add some.
+                None yet—search above to add some.
               </Text>
             ) : (
               accepted.map((s) => (

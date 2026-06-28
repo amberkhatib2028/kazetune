@@ -258,7 +258,7 @@ export default function PinDetailScreen() {
         : await new Promise<boolean>((resolve) => {
             Alert.alert(
               'Delete this pin?',
-              `${pin.track_name} — ${pin.artist_name}`,
+              `${pin.track_name}—${pin.artist_name}`,
               [
                 {
                   text: 'Cancel',
@@ -446,7 +446,7 @@ export default function PinDetailScreen() {
 
       {pin.is_mine && pin.visibility === 'private' && (
         <Text style={[styles.shareHint, { color: c.textSubtle }]}>
-          Private — only you can open this. Choose who can see it below.
+          Private—only you can open this. Choose who can see it below.
         </Text>
       )}
 
@@ -517,7 +517,7 @@ export default function PinDetailScreen() {
 
         {comments.length === 0 ? (
           <Text style={[styles.noComments, { color: c.textSubtle }]}>
-            No comments yet — be the first.
+            No comments yet—be the first.
           </Text>
         ) : (
           comments.map((cm) => (

@@ -44,7 +44,7 @@ export default function PinMarker({ pin, onCalloutPress }: Props) {
     <Marker
       coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
       title={pin.place_name ?? pin.track_name}
-      description={`${pin.track_name} — ${pin.artist_name}`}
+      description={`${pin.track_name}—${pin.artist_name}`}
       tracksViewChanges={tracking}
       onCalloutPress={onCalloutPress}
     >
