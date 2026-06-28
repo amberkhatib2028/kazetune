@@ -15,6 +15,7 @@ import {
   ScrollView,
   Share,
   StyleSheet,
+  TextInput,
   View as RNView,
 } from 'react-native';
 
@@ -31,6 +32,15 @@ import {
 } from '@/lib/spotifyPlayback';
 import { listPins, type Pin, type PinVisibility } from '@/lib/pins';
 import { promptReport } from '@/lib/moderation';
+import {
+  addPinComment,
+  deletePinComment,
+  getPinLikeSummary,
+  likePin,
+  listPinComments,
+  unlikePin,
+  type PinComment,
+} from '@/lib/pinSocial';
 import { supabase } from '@/lib/supabase';
 
 // Spotify brand green, per Spotify's design guidelines.
@@ -55,6 +65,24 @@ export default function PinDetailScreen() {
     username: string | null;
     avatar_url: string | null;
   } | null>(null);
+
+  // Likes + comments.
+  const [likeCount, setLikeCount] = useState(0);
+  const [likedByMe, setLikedByMe] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [comments, setComments] = useState<PinComment[]>([]);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [postingComment, setPostingComment] = useState(false);
+
+  const loadSocial = useCallback(async () => {
+    const [summary, list] = await Promise.all([
+      getPinLikeSummary(id).catch(() => ({ like_count: 0, liked_by_me: false })),
+      listPinComments(id).catch(() => []),
+    ]);
+    setLikeCount(summary.like_count);
+    setLikedByMe(summary.liked_by_me);
+    setComments(list);
+  }, [id]);
 
   const load = useCallback(async () => {
     try {
@@ -87,8 +115,9 @@ export default function PinDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
+      loadSocial();
       setPlaying(getCurrentPinId() === id);
-    }, [load, id]),
+    }, [load, loadSocial, id]),
   );
 
   const togglePlay = async () => {
@@ -146,6 +175,57 @@ export default function PinDetailScreen() {
     } catch {
       // User dismissed the share sheet, or it failed — nothing to do.
     }
+  };
+
+  const toggleLike = async () => {
+    if (liking) return;
+    // Optimistic — flip immediately, revert on failure.
+    const next = !likedByMe;
+    setLikedByMe(next);
+    setLikeCount((n) => n + (next ? 1 : -1));
+    setLiking(true);
+    try {
+      if (next) await likePin(id);
+      else await unlikePin(id);
+    } catch {
+      setLikedByMe(!next);
+      setLikeCount((n) => n + (next ? -1 : 1));
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const postComment = async () => {
+    const body = commentDraft.trim();
+    if (!body || postingComment) return;
+    setPostingComment(true);
+    try {
+      await addPinComment(id, body);
+      setCommentDraft('');
+      await loadSocial();
+    } catch (e: any) {
+      Alert.alert('Could not post', e?.message ?? String(e));
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const removeComment = (commentId: string) => {
+    Alert.alert('Delete comment?', undefined, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deletePinComment(commentId);
+            setComments((cur) => cur.filter((x) => x.id !== commentId));
+          } catch (e: any) {
+            Alert.alert('Could not delete', e?.message ?? String(e));
+          }
+        },
+      },
+    ]);
   };
 
   const changeVisibility = async (v: PinVisibility) => {
@@ -412,6 +492,108 @@ export default function PinDetailScreen() {
           </Pressable>
         </>
       )}
+
+      {/* ---- Likes + comments ------------------------------------- */}
+      <View style={styles.socialSection}>
+        <Pressable
+          style={styles.likeRow}
+          onPress={toggleLike}
+          hitSlop={8}
+          disabled={liking}
+        >
+          <Text
+            style={[styles.likeHeart, { color: likedByMe ? c.primary : c.textSubtle }]}
+          >
+            {likedByMe ? '♥' : '♡'}
+          </Text>
+          <Text style={[styles.likeCount, { color: c.textMuted }]}>
+            {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+          </Text>
+        </Pressable>
+
+        <Text style={[styles.label, { color: c.textMuted, marginTop: 18 }]}>
+          Comments ({comments.length})
+        </Text>
+
+        {comments.length === 0 ? (
+          <Text style={[styles.noComments, { color: c.textSubtle }]}>
+            No comments yet — be the first.
+          </Text>
+        ) : (
+          comments.map((cm) => (
+            <RNView key={cm.id} style={styles.commentRow}>
+              <Pressable
+                onPress={() =>
+                  !cm.is_mine &&
+                  router.push({ pathname: '/user/[id]', params: { id: cm.user_id } })
+                }
+              >
+                <Avatar uri={cm.avatar_url} name={cm.display_name} size={34} />
+              </Pressable>
+              <RNView style={styles.commentBody}>
+                <Text style={styles.commentName} numberOfLines={1}>
+                  {cm.display_name ?? 'someone'}
+                  {cm.username ? ` · @${cm.username}` : ''}
+                </Text>
+                <Text style={[styles.commentText, { color: c.text }]}>
+                  {cm.body}
+                </Text>
+                <RNView style={styles.commentActions}>
+                  {cm.is_mine || pin.is_mine ? (
+                    <Pressable onPress={() => removeComment(cm.id)} hitSlop={6}>
+                      <Text style={[styles.commentAction, { color: c.danger }]}>
+                        Delete
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={() => promptReport('comment', cm.id, 'comment')}
+                      hitSlop={6}
+                    >
+                      <Text style={[styles.commentAction, { color: c.textSubtle }]}>
+                        Report
+                      </Text>
+                    </Pressable>
+                  )}
+                </RNView>
+              </RNView>
+            </RNView>
+          ))
+        )}
+
+        <RNView style={styles.commentInputRow}>
+          <TextInput
+            style={[
+              styles.commentInput,
+              {
+                color: c.inputText,
+                backgroundColor: c.inputBackground,
+                borderColor: c.border,
+              },
+            ]}
+            placeholder="Add a comment…"
+            placeholderTextColor={c.placeholder}
+            value={commentDraft}
+            onChangeText={setCommentDraft}
+            maxLength={500}
+            multiline
+            editable={!postingComment}
+          />
+          <Pressable
+            style={[
+              styles.postBtn,
+              { backgroundColor: c.primary },
+              (postingComment || !commentDraft.trim()) && styles.disabled,
+            ]}
+            onPress={postComment}
+            disabled={postingComment || !commentDraft.trim()}
+          >
+            <Text style={[styles.postBtnText, { color: c.primaryText }]}>
+              {postingComment ? '…' : 'Post'}
+            </Text>
+          </Pressable>
+        </RNView>
+      </View>
     </ScrollView>
   );
 }
@@ -510,6 +692,36 @@ const styles = StyleSheet.create({
 
   reportButton: { marginTop: 18, paddingVertical: 6 },
   reportText: { fontSize: 13, fontWeight: '600' },
+
+  socialSection: { width: '100%', marginTop: 32 },
+  likeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  likeHeart: { fontSize: 26, lineHeight: 28 },
+  likeCount: { fontSize: 15, fontWeight: '600' },
+  noComments: { fontSize: 14, marginTop: 8 },
+  commentRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  commentBody: { flex: 1, gap: 2 },
+  commentName: { fontSize: 13, fontWeight: '700' },
+  commentText: { fontSize: 15, lineHeight: 20 },
+  commentActions: { flexDirection: 'row', marginTop: 2 },
+  commentAction: { fontSize: 12, fontWeight: '600' },
+  commentInputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 18 },
+  commentInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    maxHeight: 120,
+  },
+  postBtn: {
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postBtnText: { fontWeight: '700', fontSize: 14 },
 
   notFound: { fontSize: 16 },
   disabled: { opacity: 0.4 },

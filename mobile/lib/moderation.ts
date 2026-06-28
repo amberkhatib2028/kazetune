@@ -10,7 +10,7 @@ import { ActionSheetIOS, Alert, Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
-export type ReportableType = 'pin' | 'playlist' | 'profile';
+export type ReportableType = 'pin' | 'playlist' | 'profile' | 'comment';
 
 export type BlockedUser = {
   id: string;

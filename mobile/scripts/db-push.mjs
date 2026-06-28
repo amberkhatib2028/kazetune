@@ -52,6 +52,7 @@ const ORDER = [
   'friendship_accepted_at_migration.sql',
   'delete_account_rpc.sql',
   'moderation_migration.sql',
+  'pin_social_migration.sql',
 ];
 
 function loadEnvValue(key) {
