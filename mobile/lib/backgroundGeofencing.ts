@@ -24,6 +24,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 import { playPinClip, stopPinClip } from './spotifyPlayback';
+import { ensureNotificationPermission, notifyPinNearby } from './localNotifications';
 import type { Pin } from './pins';
 
 export const GEOFENCE_TASK_NAME = 'kazetune-walking-geofence';
@@ -78,6 +79,9 @@ TaskManager.defineTask(
     // platforms import-cycle).
     if (eventType === Location.GeofencingEventType.Enter || eventType === 1) {
       await playPinClip(pin as unknown as Pin);
+      // Local banner so a background walk (phone pocketed) surfaces what's
+      // now playing. Best-effort; never blocks playback.
+      notifyPinNearby(pin);
       DeviceEventEmitter.emit(GEOFENCE_EVENT_ENTER, pin);
     } else if (
       eventType === Location.GeofencingEventType.Exit ||
@@ -145,6 +149,10 @@ export async function startBackgroundGeofencing(
       'Background location not granted. Set Location → Always in Settings to play clips when the app is in the background.',
     );
   }
+
+  // Ask for notification permission too (best-effort) so background-walk
+  // pins can surface a "now playing here" banner. Never blocks the walk.
+  ensureNotificationPermission().catch(() => {});
 
   // Pick the nearest 20 pins to where the user is right now.
   const here = await Location.getCurrentPositionAsync({});

@@ -51,6 +51,12 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "color": "#FF6F91"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "KazeTune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
