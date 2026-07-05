@@ -29,7 +29,6 @@ import {
 import { supabase } from '@/lib/supabase';
 
 const MIN_CLIP_SEC = 20;
-const MAX_CLIP_SEC = 45;
 
 export default function CreatePinScreen() {
   const c = useThemeColors();
@@ -180,10 +179,6 @@ export default function CreatePinScreen() {
       Alert.alert('Clip too short', `Clip must be at least ${MIN_CLIP_SEC} seconds.`);
       return;
     }
-    if (dur > MAX_CLIP_SEC) {
-      Alert.alert('Clip too long', `Clip can be at most ${MAX_CLIP_SEC} seconds.`);
-      return;
-    }
 
     try {
       await stopPreview();
@@ -326,7 +321,7 @@ export default function CreatePinScreen() {
 
       <Text style={styles.section}>Clip</Text>
       <Text style={[styles.hint, { color: c.textSubtle }]}>
-        Drag to choose the part that plays here—{MIN_CLIP_SEC}–{MAX_CLIP_SEC}s.
+        Drag to choose the part that plays here—at least {MIN_CLIP_SEC}s, up to the whole song.
       </Text>
       {trackDurationSec > 0 ? (
         <ClipRangeSlider
@@ -334,7 +329,6 @@ export default function CreatePinScreen() {
           startSec={startSeconds}
           durationSec={durationSeconds}
           minDurationSec={MIN_CLIP_SEC}
-          maxDurationSec={MAX_CLIP_SEC}
           onChange={(s, d) => {
             setStartSeconds(s);
             setDurationSeconds(d);
