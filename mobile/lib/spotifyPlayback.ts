@@ -19,10 +19,27 @@
 // the first available one; if there are none, we surface NO_DEVICE so
 // the UI can tell the user to open Spotify.
 
+import { Linking } from 'react-native';
+
 import { getSpotifyTokens, refreshSpotifyToken } from './supabase';
 import type { Pin } from './pins';
 
 const SPOTIFY_API = 'https://api.spotify.com/v1';
+
+/**
+ * Foreground the Spotify app so it registers as an available Connect
+ * device (that's all our player calls need — once it's awake, a transfer
+ * activates it). Way friendlier than telling the user to "play a song
+ * first." Returns false if Spotify isn't installed.
+ */
+export async function openSpotifyApp(): Promise<boolean> {
+  try {
+    await Linking.openURL('spotify://');
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Distinct, machine-readable failure reasons so callers can show the
 // right guidance instead of a raw HTTP error.

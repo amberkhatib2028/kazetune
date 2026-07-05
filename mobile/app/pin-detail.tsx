@@ -5,10 +5,11 @@
 
 import * as Linking from 'expo-linking';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Image,
   Platform,
   Pressable,
@@ -27,6 +28,7 @@ import { getTrack, openTrackInSpotify } from '@/lib/spotify';
 import {
   PlaybackError,
   getCurrentPinId,
+  openSpotifyApp,
   playPinClip,
   stopPinClip,
 } from '@/lib/spotifyPlayback';
@@ -120,16 +122,15 @@ export default function PinDetailScreen() {
     }, [load, loadSocial, id]),
   );
 
-  const togglePlay = async () => {
+  // Set when we've sent the user to Spotify to wake it up — on returning
+  // to KazeTune we auto-retry the play so they don't have to tap again.
+  const playOnReturn = useRef(false);
+
+  // playPinClip drives the user's Spotify (full track, seeked to the
+  // pin's start). It throws a PlaybackError with a reason when it can't —
+  // surface the right guidance for each case.
+  const playNow = useCallback(async () => {
     if (!pin) return;
-    if (playing) {
-      await stopPinClip();
-      setPlaying(false);
-      return;
-    }
-    // playPinClip drives the user's Spotify (full track, seeked to the
-    // pin's start). It throws a PlaybackError with a reason when it
-    // can't — surface the right guidance for each case.
     setLoadingClip(true);
     try {
       const ok = await playPinClip(pin);
@@ -138,8 +139,18 @@ export default function PinDetailScreen() {
       const reason = e instanceof PlaybackError ? e.reason : 'UNKNOWN';
       if (reason === 'NO_DEVICE') {
         Alert.alert(
-          'Open Spotify first',
-          'Start Spotify on your phone and play (then pause) any song so it becomes the active device, then tap play here again.',
+          'Wake up Spotify',
+          'KazeTune plays through your Spotify app. Tap Open Spotify — the clip starts automatically when you come back here.',
+          [
+            { text: 'Not now', style: 'cancel' },
+            {
+              text: 'Open Spotify',
+              onPress: () => {
+                playOnReturn.current = true;
+                openSpotifyApp();
+              },
+            },
+          ],
         );
       } else if (reason === 'PREMIUM_REQUIRED') {
         Alert.alert(
@@ -157,6 +168,29 @@ export default function PinDetailScreen() {
     } finally {
       setLoadingClip(false);
     }
+  }, [pin]);
+
+  // When we come back from Spotify (which we opened to wake it as a
+  // device), retry the play once — after a short beat so Spotify has
+  // registered as an available Connect device.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && playOnReturn.current) {
+        playOnReturn.current = false;
+        setTimeout(() => { playNow(); }, 900);
+      }
+    });
+    return () => sub.remove();
+  }, [playNow]);
+
+  const togglePlay = async () => {
+    if (!pin) return;
+    if (playing) {
+      await stopPinClip();
+      setPlaying(false);
+      return;
+    }
+    await playNow();
   };
 
   const onShare = async () => {
