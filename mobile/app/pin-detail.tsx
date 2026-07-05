@@ -533,8 +533,15 @@ export default function PinDetailScreen() {
               <RNView style={styles.commentBody}>
                 <Text style={styles.commentName} numberOfLines={1}>
                   {cm.display_name ?? 'someone'}
-                  {cm.username ? ` · @${cm.username}` : ''}
                 </Text>
+                {cm.username ? (
+                  <Text
+                    style={[styles.commentHandle, { color: c.textMuted }]}
+                    numberOfLines={1}
+                  >
+                    @{cm.username}
+                  </Text>
+                ) : null}
                 <Text style={[styles.commentText, { color: c.text }]}>
                   {cm.body}
                 </Text>
@@ -701,6 +708,7 @@ const styles = StyleSheet.create({
   commentRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   commentBody: { flex: 1, gap: 2 },
   commentName: { fontSize: 13, fontWeight: '700' },
+  commentHandle: { fontSize: 12, marginTop: 1 },
   commentText: { fontSize: 15, lineHeight: 20 },
   commentActions: { flexDirection: 'row', marginTop: 2 },
   commentAction: { fontSize: 12, fontWeight: '600' },
