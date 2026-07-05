@@ -54,15 +54,23 @@ export class PremiumRequiredError extends Error {
 // can fail OPEN — we never want a flaky network to lock out a real
 // Premium user. Requires the `user-read-private` scope (we request it).
 export async function fetchSpotifyProduct(token: string): Promise<string | null> {
+  // Bound the check so a slow/hung /me can never stall sign-in. On
+  // timeout we abort and fall through to null → fail OPEN (proceed), so a
+  // flaky network never traps a real Premium user on the spinner.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 7000);
   try {
     const res = await fetch('https://api.spotify.com/v1/me', {
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     const data = await res.json();
     return typeof data?.product === 'string' ? data.product : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
