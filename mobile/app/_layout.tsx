@@ -218,6 +218,10 @@ function NavStack() {
           options={{ presentation: 'modal', title: 'Playlist' }}
         />
         <Stack.Screen
+          name="edit-playlist"
+          options={{ presentation: 'modal', title: 'Edit playlist' }}
+        />
+        <Stack.Screen
           name="add-to-playlist"
           options={{ presentation: 'modal', title: 'Add to playlist' }}
         />

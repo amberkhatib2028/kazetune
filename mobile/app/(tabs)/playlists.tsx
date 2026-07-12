@@ -8,11 +8,13 @@ import {
   Alert,
   FlatList,
   Image,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   TextInput,
+  TouchableWithoutFeedback,
   View as RNView,
 } from 'react-native';
 
@@ -155,6 +157,7 @@ export default function PlaylistsScreen() {
       </View>
 
       {creating && (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={[styles.createForm, { backgroundColor: c.card }]}>
           <Text style={[styles.label, { color: c.textMuted }]}>Cover (optional)</Text>
           <Pressable
@@ -196,6 +199,8 @@ export default function PlaylistsScreen() {
             onChangeText={setTitle}
             placeholder="My walk playlist"
             placeholderTextColor={c.placeholder}
+            returnKeyType="done"
+            onSubmitEditing={Keyboard.dismiss}
             autoFocus
           />
           <Text style={[styles.label, { color: c.textMuted }]}>
@@ -241,6 +246,7 @@ export default function PlaylistsScreen() {
             )}
           </Pressable>
         </View>
+        </TouchableWithoutFeedback>
       )}
 
       <ScrollView

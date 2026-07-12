@@ -74,6 +74,28 @@ export async function createPlaylist(opts: {
   return data as Playlist;
 }
 
+// Edit a playlist's metadata. Only the fields you pass are changed.
+// RLS (playlists_update) enforces that you own it, so a plain table
+// update is safe — same pattern as deletePlaylist.
+export async function updatePlaylist(
+  playlistId: string,
+  fields: {
+    title?: string;
+    description?: string | null;
+    isPublic?: boolean;
+    coverImageUrl?: string | null;
+  },
+): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (fields.title !== undefined) patch.title = fields.title;
+  if (fields.description !== undefined) patch.description = fields.description;
+  if (fields.isPublic !== undefined) patch.is_public = fields.isPublic;
+  if (fields.coverImageUrl !== undefined) patch.cover_image_url = fields.coverImageUrl;
+  if (Object.keys(patch).length === 0) return;
+  const { error } = await supabase.from('playlists').update(patch).eq('id', playlistId);
+  if (error) throw error;
+}
+
 export async function addPinToPlaylist(
   playlistId: string,
   pinId: string,

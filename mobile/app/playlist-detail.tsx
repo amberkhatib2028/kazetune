@@ -2,7 +2,7 @@
 // order, and lets the owner remove pins or delete the playlist.
 
 import * as Linking from 'expo-linking';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -83,7 +83,9 @@ export default function PlaylistDetailScreen() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  // Reload on focus so edits made on the edit-playlist screen show when
+  // we pop back here.
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // Lazy-load the full pin set only when this walk includes public pins.
   useEffect(() => {
@@ -280,6 +282,18 @@ export default function PlaylistDetailScreen() {
             ↗ Share playlist
           </Text>
         </Pressable>
+        {playlist.is_mine && (
+          <Pressable
+            style={[styles.routeBtn, { borderColor: c.primary }]}
+            onPress={() =>
+              router.push({ pathname: '/edit-playlist', params: { id } })
+            }
+          >
+            <Text style={[styles.routeBtnText, { color: c.primary }]}>
+              ✎ Edit playlist
+            </Text>
+          </Pressable>
+        )}
         {!playlist.is_mine && (
           <Pressable
             style={[
