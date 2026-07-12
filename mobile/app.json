@@ -18,7 +18,10 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "KazeTune needs access to your photo library so you can add a picture to your pins, playlists, and profile.",
         "NSCameraUsageDescription": "KazeTune uses the camera if you want to snap a fresh photo for a pin, playlist cover, or profile picture.",
-        "UIBackgroundModes": ["audio", "location"]
+        "UIBackgroundModes": [
+          "audio",
+          "location"
+        ]
       }
     },
     "android": {
@@ -34,7 +37,11 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
@@ -76,6 +83,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bf62fb7a-68c4-40a7-9c58-0fb2fcf0d67e"
+      }
+    },
+    "owner": "amberkages-team"
   }
 }
