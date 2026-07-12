@@ -277,7 +277,11 @@ export default function EditPinScreen() {
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+    >
       <RNView style={[styles.trackCard, { backgroundColor: c.card }]}>
         {pin.album_image_url ? (
           <Image source={{ uri: pin.album_image_url }} style={styles.albumArt} />

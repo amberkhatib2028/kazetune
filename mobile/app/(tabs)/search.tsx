@@ -124,6 +124,8 @@ export default function SearchScreen() {
           data={results}
           keyExtractor={(t) => t.id}
           contentContainerStyle={styles.list}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <Pressable
               style={styles.row}

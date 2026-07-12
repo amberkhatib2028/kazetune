@@ -179,6 +179,8 @@ export default function SettingsScreen() {
     <ScrollView
       style={{ backgroundColor: c.background }}
       contentContainerStyle={styles.container}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
     >
       {/* ---- Account ------------------------------------------------ */}
       <Text style={[styles.sectionLabel, { color: c.textMuted }]}>

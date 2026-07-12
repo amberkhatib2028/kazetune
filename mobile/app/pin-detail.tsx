@@ -351,7 +351,11 @@ export default function PinDetailScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+    >
       {pin.image_url || pin.album_image_url ? (
         <Image
           source={{ uri: pin.image_url ?? pin.album_image_url! }}

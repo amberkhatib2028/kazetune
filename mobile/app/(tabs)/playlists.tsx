@@ -278,6 +278,8 @@ export default function PlaylistsScreen() {
           data={visible}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <EmptyState
               icon="music.note.list"

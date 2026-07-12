@@ -6,7 +6,14 @@
 
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput } from 'react-native';
+import {
+  ActivityIndicator,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  TouchableWithoutFeedback,
+} from 'react-native';
 
 import { Text, View, useThemeColors } from '@/components/Themed';
 import { setUsername } from '@/lib/friends';
@@ -54,6 +61,7 @@ export default function ChooseUsernameScreen() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <Text style={styles.title}>Pick a username</Text>
       <Text style={[styles.subtitle, { color: c.textMuted }]}>
@@ -100,6 +108,7 @@ export default function ChooseUsernameScreen() {
         )}
       </Pressable>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 

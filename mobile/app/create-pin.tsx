@@ -226,7 +226,11 @@ export default function CreatePinScreen() {
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={[styles.trackCard, { backgroundColor: c.card }]}>
         {params.albumImageUrl ? (
           <Image source={{ uri: params.albumImageUrl }} style={styles.albumArt} />

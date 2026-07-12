@@ -134,7 +134,12 @@ export default function FriendsScreen() {
   const outgoing = summary.filter((s) => s.status === 'pending_outgoing');
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Friends</Text>
 
       {/* --- Search bar --- */}
