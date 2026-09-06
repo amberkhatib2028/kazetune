@@ -12,9 +12,9 @@ listing. Fill the few `[bracketed]` spots. Bundle ID: **app.kazetune**.
 - **Primary category:** Music
 - **Secondary category:** Social Networking
 - **Bundle ID:** app.kazetune
-- **Support URL:** https://kazetune.app
-- **Marketing URL:** https://kazetune.app
-- **Privacy Policy URL:** https://kazetune.app/privacy
+- **Support URL:** https://amberkhatib2028.github.io/kazetune/
+- **Marketing URL:** https://amberkhatib2028.github.io/kazetune/
+- **Privacy Policy URL:** https://amberkhatib2028.github.io/kazetune/privacy
 
 ## Promotional text (max 170 chars — editable anytime without review)
 
@@ -126,7 +126,7 @@ Tip: use nice-looking pins (real songs, real places) before screenshotting.
 
 ## Pre-submission checklist
 
-- [ ] DNS pointed so kazetune.app/privacy + /terms load (Apple checks them)
+- [x] Privacy + Terms live at https://amberkhatib2028.github.io/kazetune/privacy and /terms (Apple checks them)
 - [ ] Premium demo account created + allow-listed in Spotify
 - [ ] Screenshots captured
 - [ ] Seed/test data wiped (Casey, Jordan, Test Friend) — ask Claude

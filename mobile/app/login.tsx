@@ -30,8 +30,8 @@ const SPOTIFY_SCOPES =
 
 // Hosted legal docs. Required for App Store review (EULA + privacy
 // policy). Update these to the live URLs before submission.
-const TERMS_URL = 'https://kazetune.app/terms';
-const PRIVACY_URL = 'https://kazetune.app/privacy';
+const TERMS_URL = 'https://amberkhatib2028.github.io/kazetune/terms';
+const PRIVACY_URL = 'https://amberkhatib2028.github.io/kazetune/privacy';
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
